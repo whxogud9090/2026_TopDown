@@ -14,10 +14,17 @@ public class SurvivorsGameManager : MonoBehaviour
     public CoffeeSpillWeapon coffeeSpillWeapon;
     public Health playerHealth;
     public SurvivorsRewardPanel rewardPanel;
+
+    public GameObject titlePanel;
+    public GameObject gameOverPanel;
+    public Button startButton;
+    public Button restartButton;
+
     public Text statusText;
-    public Text healthText;
     public Text levelText;
     public Text timerText;
+    public Text gameOverTitleText;
+    public Text gameOverInfoText;
 
     public int level = 1;
     public int experience;
@@ -25,16 +32,18 @@ public class SurvivorsGameManager : MonoBehaviour
 
     private float elapsed;
     private bool gameOver;
+    private bool gameStarted;
 
     private readonly List<RewardChoice> rewardPool = new()
     {
-        new RewardChoice(RewardType.Damage, "강화 탄환", "권총 피해량이 1 증가합니다."),
-        new RewardChoice(RewardType.FireRate, "빠른 장전", "권총을 더 빠르게 발사합니다."),
-        new RewardChoice(RewardType.BookOrbit, "철판 방어막", "고철이 주변을 돌며 좀비를 공격합니다."),
-        new RewardChoice(RewardType.CoffeeSpill, "화염병", "좀비 위치에 불길을 남겨 범위 피해를 줍니다."),
-        new RewardChoice(RewardType.MoveSpeed, "아드레날린", "이동 속도가 증가합니다."),
-        new RewardChoice(RewardType.MaxHealth, "응급 처치", "최대 체력이 1 증가합니다."),
-        new RewardChoice(RewardType.ProjectileSpeed, "고속 탄환", "탄환이 더 빠르게 날아갑니다.")
+        new RewardChoice(RewardType.Damage, "강화 탄환", "권총 피해량 +1"),
+        new RewardChoice(RewardType.FireRate, "빠른 장전", "권총 발사 속도 증가"),
+        new RewardChoice(RewardType.Shotgun, "낡은 샷건", "부채꼴 산탄 추가 발사"),
+        new RewardChoice(RewardType.BookOrbit, "철판 방어막", "고철이 주변을 돌며 공격"),
+        new RewardChoice(RewardType.CoffeeSpill, "화염병", "불길 장판으로 범위 피해"),
+        new RewardChoice(RewardType.MoveSpeed, "아드레날린", "이동 속도 증가"),
+        new RewardChoice(RewardType.MaxHealth, "응급 처치", "최대 체력 +1 및 회복"),
+        new RewardChoice(RewardType.ProjectileSpeed, "고속 탄환", "탄환 속도 증가")
     };
 
     private void Awake()
@@ -51,24 +60,46 @@ public class SurvivorsGameManager : MonoBehaviour
             playerHealth.Changed += _ => RefreshHud();
         }
 
+        if (startButton != null)
+            startButton.onClick.AddListener(StartGame);
+
+        if (restartButton != null)
+            restartButton.onClick.AddListener(RestartGame);
+
+        ShowTitle();
         RefreshHud();
     }
 
     private void Update()
     {
         if (KeyboardRestartPressed())
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            RestartGame();
 
-        if (gameOver)
+        if (gameOver || !gameStarted)
             return;
 
         elapsed += Time.deltaTime;
         RefreshHud();
     }
 
+    public void StartGame()
+    {
+        gameStarted = true;
+        gameOver = false;
+        Time.timeScale = 1f;
+
+        if (titlePanel != null)
+            titlePanel.SetActive(false);
+
+        if (gameOverPanel != null)
+            gameOverPanel.SetActive(false);
+
+        RefreshHud();
+    }
+
     public void AddExperience(int amount)
     {
-        if (gameOver)
+        if (gameOver || !gameStarted)
             return;
 
         experience += amount;
@@ -77,7 +108,9 @@ public class SurvivorsGameManager : MonoBehaviour
             experience -= experienceToNextLevel;
             level++;
             experienceToNextLevel = Mathf.RoundToInt(experienceToNextLevel * 1.35f + 2);
-            rewardPanel.Show(GetRandomRewards(3));
+
+            if (rewardPanel != null)
+                rewardPanel.Show(GetRandomRewards(3));
         }
 
         RefreshHud();
@@ -92,6 +125,9 @@ public class SurvivorsGameManager : MonoBehaviour
                 break;
             case RewardType.FireRate:
                 autoAimWeapon.fireCooldown = Mathf.Max(0.08f, autoAimWeapon.fireCooldown * 0.82f);
+                break;
+            case RewardType.Shotgun:
+                autoAimWeapon.UnlockShotgun();
                 break;
             case RewardType.MoveSpeed:
                 playerController.moveSpeed += 0.35f;
@@ -128,31 +164,62 @@ public class SurvivorsGameManager : MonoBehaviour
         return result;
     }
 
+    private void ShowTitle()
+    {
+        gameStarted = false;
+        Time.timeScale = 0f;
+
+        if (titlePanel != null)
+            titlePanel.SetActive(true);
+
+        if (gameOverPanel != null)
+            gameOverPanel.SetActive(false);
+
+        if (statusText != null)
+            statusText.text = "START 버튼을 눌러 폐허 도시로 진입";
+    }
+
     private void OnPlayerDied(Health health)
     {
         gameOver = true;
         Time.timeScale = 0f;
+
+        if (gameOverPanel != null)
+            gameOverPanel.SetActive(true);
+
+        if (gameOverTitleText != null)
+            gameOverTitleText.text = "YOU DIED";
+
+        if (gameOverInfoText != null)
+            gameOverInfoText.text = "생존 시간 " + FormatTime(elapsed) + " / 도달 레벨 " + level + "\nR 키 또는 재시작 버튼으로 다시 도전";
+
         if (statusText != null)
-            statusText.text = "GAME OVER - Press R to restart";
+            statusText.text = "사망 - R 키로 재시작";
+    }
+
+    private void RestartGame()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     private void RefreshHud()
     {
-        if (healthText != null && playerHealth != null)
-            healthText.text = "HP " + playerHealth.CurrentHealth + " / " + playerHealth.maxHealth;
-
         if (levelText != null)
             levelText.text = "LV " + level + "  XP " + experience + " / " + experienceToNextLevel;
 
         if (timerText != null)
-        {
-            var minutes = Mathf.FloorToInt(elapsed / 60f);
-            var seconds = Mathf.FloorToInt(elapsed % 60f);
-            timerText.text = minutes.ToString("00") + ":" + seconds.ToString("00");
-        }
+            timerText.text = FormatTime(elapsed);
 
-        if (statusText != null && !gameOver)
-            statusText.text = "WASD 이동 | 권총 자동 사격 | 좀비 웨이브 생존";
+        if (statusText != null && !gameOver && gameStarted)
+            statusText.text = "WASD 이동 | 자동 사격 | 경험치 획득 | 레벨업 보상 선택";
+    }
+
+    private static string FormatTime(float time)
+    {
+        var minutes = Mathf.FloorToInt(time / 60f);
+        var seconds = Mathf.FloorToInt(time % 60f);
+        return minutes.ToString("00") + ":" + seconds.ToString("00");
     }
 
     private static bool KeyboardRestartPressed()

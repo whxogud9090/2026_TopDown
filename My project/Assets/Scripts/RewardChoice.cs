@@ -8,7 +8,8 @@ public enum RewardType
     MaxHealth,
     ProjectileSpeed,
     BookOrbit,
-    CoffeeSpill
+    CoffeeSpill,
+    Shotgun
 }
 
 [System.Serializable]

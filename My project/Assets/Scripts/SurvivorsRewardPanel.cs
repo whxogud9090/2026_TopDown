@@ -68,6 +68,8 @@ public class SurvivorsRewardPanel : MonoBehaviour
             case RewardType.CoffeeSpill:
             case RewardType.MoveSpeed:
                 return coffeeIcon;
+            case RewardType.Shotgun:
+                return pencilIcon;
             case RewardType.MaxHealth:
                 return eraserIcon;
             case RewardType.ProjectileSpeed:

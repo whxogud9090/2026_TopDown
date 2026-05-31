@@ -5,10 +5,12 @@ public class Health : MonoBehaviour
 {
     public int maxHealth = 3;
     public bool destroyOnDeath = true;
+    public bool showDamageNumber = true;
 
     public int CurrentHealth { get; private set; }
     public event Action<Health> Died;
     public event Action<Health> Changed;
+    public event Action<Health, int> Damaged;
 
     private void Awake()
     {
@@ -21,7 +23,15 @@ public class Health : MonoBehaviour
             return;
 
         CurrentHealth = Mathf.Max(0, CurrentHealth - amount);
+        Damaged?.Invoke(this, amount);
         Changed?.Invoke(this);
+
+        var flash = GetComponent<DamageFlash>();
+        if (flash != null)
+            flash.Flash();
+
+        if (showDamageNumber)
+            DamageNumber.Spawn(transform.position + Vector3.up * 0.55f, amount);
 
         if (CurrentHealth <= 0)
         {

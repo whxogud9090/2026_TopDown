@@ -29,7 +29,7 @@ public static class DesktopSurvivorsSceneBuilder
         EnsureFolder(TileRoot);
         EnsureTag("Enemy");
         AssetDatabase.Refresh();
-        PreparePostApocalypseArt();
+        PrepareSprites();
 
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         scene.name = "WastelandSurvivorsPrototype";
@@ -40,7 +40,7 @@ public static class DesktopSurvivorsSceneBuilder
 
         ConfigureCamera();
         ConfigureFloor();
-        ConfigureWastelandDecorations();
+        ConfigureDecorations();
         var player = CreatePlayer(projectilePrefab);
         CreateSpawner(enemyPrefab, player.transform);
         CreateGameManager(player);
@@ -48,26 +48,23 @@ public static class DesktopSurvivorsSceneBuilder
         CreateEventSystem();
 
         EditorSceneManager.SaveScene(scene, ScenePath);
-        AddSceneToBuildSettings(ScenePath);
+        EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        Debug.Log("Wasteland Survivors prototype scene built: " + ScenePath);
+        Debug.Log("Wasteland Survivors scene rebuilt: " + ScenePath);
     }
 
-    private static void PreparePostApocalypseArt()
+    private static void PrepareSprites()
     {
         foreach (var guid in AssetDatabase.FindAssets("t:Texture2D", new[] { GeneratedRoot }))
-        {
-            var path = AssetDatabase.GUIDToAssetPath(guid);
-            ConfigureTexture(path, 16);
-        }
+            ConfigureTexture(AssetDatabase.GUIDToAssetPath(guid), 16);
 
-        foreach (var path in GetDirectlyUsedExternalSprites())
+        foreach (var path in GetUsedExternalSprites())
             ConfigureTexture(path, 16);
     }
 
-    private static string[] GetDirectlyUsedExternalSprites()
+    private static string[] GetUsedExternalSprites()
     {
         return new[]
         {
@@ -133,12 +130,10 @@ public static class DesktopSurvivorsSceneBuilder
 
     private static ExperienceGem CreateGemPrefab()
     {
-        if (AssetDatabase.LoadAssetAtPath<ExperienceGem>(GemPrefabPath) != null)
-            AssetDatabase.DeleteAsset(GemPrefabPath);
+        DeleteAssetIfExists(GemPrefabPath);
 
         var go = new GameObject("SupplyGem");
         go.transform.localScale = Vector3.one * 0.75f;
-
         var sr = go.AddComponent<SpriteRenderer>();
         sr.sprite = LoadSprite(PostRoot + "/Objects/Pickable/Ammo-crate_Blue.png");
         sr.color = new Color(0.65f, 0.95f, 1f);
@@ -156,14 +151,13 @@ public static class DesktopSurvivorsSceneBuilder
 
     private static Projectile CreateProjectilePrefab()
     {
-        if (AssetDatabase.LoadAssetAtPath<Projectile>(ProjectilePrefabPath) != null)
-            AssetDatabase.DeleteAsset(ProjectilePrefabPath);
+        DeleteAssetIfExists(ProjectilePrefabPath);
 
         var go = new GameObject("PistolBullet");
-        go.transform.localScale = Vector3.one * 0.9f;
-
+        go.transform.localScale = Vector3.one * 1.05f;
         var sr = go.AddComponent<SpriteRenderer>();
         sr.sprite = LoadSprite(PostRoot + "/Character/Guns/Bullets/Pistol-bullet_Bullet.png");
+        sr.color = new Color(1f, 0.88f, 0.44f);
         sr.sortingOrder = 7;
 
         var rb = go.AddComponent<Rigidbody2D>();
@@ -172,12 +166,12 @@ public static class DesktopSurvivorsSceneBuilder
 
         var collider = go.AddComponent<CircleCollider2D>();
         collider.isTrigger = true;
-        collider.radius = 0.16f;
+        collider.radius = 0.18f;
 
         var projectile = go.AddComponent<Projectile>();
         projectile.damage = 1;
-        projectile.speed = 10.5f;
-        projectile.lifetime = 1.4f;
+        projectile.speed = 11f;
+        projectile.lifetime = 1.35f;
 
         var prefab = PrefabUtility.SaveAsPrefabAsset(go, ProjectilePrefabPath).GetComponent<Projectile>();
         Object.DestroyImmediate(go);
@@ -186,8 +180,7 @@ public static class DesktopSurvivorsSceneBuilder
 
     private static EnemyController CreateEnemyPrefab(ExperienceGem gemPrefab)
     {
-        if (AssetDatabase.LoadAssetAtPath<EnemyController>(EnemyPrefabPath) != null)
-            AssetDatabase.DeleteAsset(EnemyPrefabPath);
+        DeleteAssetIfExists(EnemyPrefabPath);
 
         var go = new GameObject("SmallZombie");
         go.tag = "Enemy";
@@ -207,6 +200,9 @@ public static class DesktopSurvivorsSceneBuilder
 
         var health = go.AddComponent<Health>();
         health.maxHealth = 3;
+
+        var flash = go.AddComponent<DamageFlash>();
+        flash.flashColor = new Color(1f, 0.1f, 0.06f);
 
         var enemy = go.AddComponent<EnemyController>();
         enemy.moveSpeed = 2.1f;
@@ -235,7 +231,7 @@ public static class DesktopSurvivorsSceneBuilder
         var camera = go.AddComponent<Camera>();
         camera.orthographic = true;
         camera.orthographicSize = 10.5f;
-        camera.backgroundColor = new Color(0.055f, 0.06f, 0.055f);
+        camera.backgroundColor = new Color(0.045f, 0.05f, 0.045f);
         go.transform.position = new Vector3(0f, 0f, -10f);
     }
 
@@ -292,23 +288,22 @@ public static class DesktopSurvivorsSceneBuilder
         return tile;
     }
 
-    private static void ConfigureWastelandDecorations()
+    private static void ConfigureDecorations()
     {
         var root = new GameObject("Wasteland Decorations");
-
-        CreateDecoration(root.transform, "Overgrown Car", PostRoot + "/Objects/Vehicles/Overgrown/Car_1_Overgrown/Bleak-Yellow/Car_1_Overgrown_Bleak-Yellow_Red.png", new Vector3(-20f, 14f, 0f), Vector3.one * 1.25f, 2);
-        CreateDecoration(root.transform, "Scrap Car", PostRoot + "/Objects/Vehicles/Normal/Car_6_Scrap/Car_6_Red_Scrap.png", new Vector3(24f, -12f, 0f), Vector3.one * 1.15f, 2);
-        CreateDecoration(root.transform, "Broken Bus", PostRoot + "/Objects/Vehicles/Normal/Car_8_Bus/Car_8_Red_Bus.png", new Vector3(42f, 18f, 0f), Vector3.one * 1.2f, 2);
-        CreateDecoration(root.transform, "Ammo Crate", PostRoot + "/Objects/Pickable/Ammo-crate_Red.png", new Vector3(-8f, -16f, 0f), Vector3.one * 1.1f, 2);
-        CreateDecoration(root.transform, "Rust Barrel A", PostRoot + "/Objects/Barrel_rust_red_1.png", new Vector3(13f, 10f, 0f), Vector3.one, 2);
-        CreateDecoration(root.transform, "Rust Barrel B", PostRoot + "/Objects/Barrel_rust_blue_2.png", new Vector3(-33f, -8f, 0f), Vector3.one, 2);
-        CreateDecoration(root.transform, "Boarded Door", PostRoot + "/Objects/Buildings/Door_3_Boarded-up_Beige.png", new Vector3(-48f, 26f, 0f), Vector3.one * 1.5f, 2);
-        CreateDecoration(root.transform, "Destroyed Wall", PostRoot + "/Objects/Buildings/Destroyed-wall_not-corner.png", new Vector3(55f, -28f, 0f), Vector3.one * 1.4f, 2);
-        CreateDecoration(root.transform, "Container", PostRoot + "/Objects/Container/Container_3_Gray_Horizontal.png", new Vector3(-58f, -34f, 0f), Vector3.one * 1.2f, 2);
-        CreateDecoration(root.transform, "Supply Pistol", PostRoot + "/Objects/Pickable/Pistol.png", new Vector3(6f, -7f, 0f), Vector3.one * 1.3f, 2);
+        CreateDecoration(root.transform, "Overgrown Car", PostRoot + "/Objects/Vehicles/Overgrown/Car_1_Overgrown/Bleak-Yellow/Car_1_Overgrown_Bleak-Yellow_Red.png", new Vector3(-20f, 14f, 0f), Vector3.one * 1.25f);
+        CreateDecoration(root.transform, "Scrap Car", PostRoot + "/Objects/Vehicles/Normal/Car_6_Scrap/Car_6_Red_Scrap.png", new Vector3(24f, -12f, 0f), Vector3.one * 1.15f);
+        CreateDecoration(root.transform, "Broken Bus", PostRoot + "/Objects/Vehicles/Normal/Car_8_Bus/Car_8_Red_Bus.png", new Vector3(42f, 18f, 0f), Vector3.one * 1.2f);
+        CreateDecoration(root.transform, "Ammo Crate", PostRoot + "/Objects/Pickable/Ammo-crate_Red.png", new Vector3(-8f, -16f, 0f), Vector3.one * 1.1f);
+        CreateDecoration(root.transform, "Rust Barrel A", PostRoot + "/Objects/Barrel_rust_red_1.png", new Vector3(13f, 10f, 0f), Vector3.one);
+        CreateDecoration(root.transform, "Rust Barrel B", PostRoot + "/Objects/Barrel_rust_blue_2.png", new Vector3(-33f, -8f, 0f), Vector3.one);
+        CreateDecoration(root.transform, "Boarded Door", PostRoot + "/Objects/Buildings/Door_3_Boarded-up_Beige.png", new Vector3(-48f, 26f, 0f), Vector3.one * 1.5f);
+        CreateDecoration(root.transform, "Destroyed Wall", PostRoot + "/Objects/Buildings/Destroyed-wall_not-corner.png", new Vector3(55f, -28f, 0f), Vector3.one * 1.4f);
+        CreateDecoration(root.transform, "Container", PostRoot + "/Objects/Container/Container_3_Gray_Horizontal.png", new Vector3(-58f, -34f, 0f), Vector3.one * 1.2f);
+        CreateDecoration(root.transform, "Supply Pistol", PostRoot + "/Objects/Pickable/Pistol.png", new Vector3(6f, -7f, 0f), Vector3.one * 1.3f);
     }
 
-    private static void CreateDecoration(Transform parent, string name, string spritePath, Vector3 position, Vector3 scale, int sortingOrder)
+    private static void CreateDecoration(Transform parent, string name, string spritePath, Vector3 position, Vector3 scale)
     {
         var sprite = LoadSprite(spritePath);
         if (sprite == null)
@@ -318,10 +313,9 @@ public static class DesktopSurvivorsSceneBuilder
         go.transform.SetParent(parent);
         go.transform.position = position;
         go.transform.localScale = scale;
-
         var sr = go.AddComponent<SpriteRenderer>();
         sr.sprite = sprite;
-        sr.sortingOrder = sortingOrder;
+        sr.sortingOrder = 2;
     }
 
     private static GameObject CreatePlayer(Projectile projectilePrefab)
@@ -351,6 +345,16 @@ public static class DesktopSurvivorsSceneBuilder
         var health = go.AddComponent<Health>();
         health.maxHealth = 5;
         health.destroyOnDeath = false;
+        health.showDamageNumber = false;
+
+        var flash = go.AddComponent<DamageFlash>();
+        flash.flashColor = new Color(1f, 0.1f, 0.06f);
+        flash.flashTime = 0.12f;
+
+        var healthBar = go.AddComponent<WorldHealthBar>();
+        healthBar.width = 0.95f;
+        healthBar.height = 0.1f;
+        healthBar.offset = new Vector3(0f, -0.68f, 0f);
 
         var weapon = go.AddComponent<AutoAimWeapon>();
         weapon.projectilePrefab = projectilePrefab;
@@ -379,9 +383,12 @@ public static class DesktopSurvivorsSceneBuilder
         var spawner = go.AddComponent<SurvivorsEnemySpawner>();
         spawner.enemyPrefab = enemyPrefab;
         spawner.player = player;
-        spawner.spawnInterval = 0.82f;
+        spawner.spawnInterval = 0.95f;
+        spawner.minSpawnInterval = 0.18f;
         spawner.spawnDistance = 14f;
-        spawner.maxEnemies = 120;
+        spawner.maxEnemies = 90;
+        spawner.maxEnemiesLimit = 220;
+        spawner.difficultyStepTime = 25f;
     }
 
     private static void CreateGameManager(GameObject player)
@@ -409,13 +416,15 @@ public static class DesktopSurvivorsSceneBuilder
         canvasObject.AddComponent<GraphicRaycaster>();
 
         var manager = Object.FindFirstObjectByType<SurvivorsGameManager>();
-        var hudBar = CreatePanel(canvasObject.transform, "HUD Bar", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 0f), new Vector2(0f, 74f), new Color(0.035f, 0.04f, 0.035f, 0.86f));
-        manager.statusText = CreateText(hudBar.transform, "Status", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(22f, -12f), new Vector2(920f, 30f), 19, TextAnchor.UpperLeft, "WASD 이동 | 권총 자동 사격 | R: 재시작");
-        manager.healthText = CreateText(hudBar.transform, "Health", new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-260f, -12f), new Vector2(230f, 30f), 20, TextAnchor.UpperRight, "HP 5 / 5");
-        manager.levelText = CreateText(hudBar.transform, "Level", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(22f, -42f), new Vector2(420f, 26f), 18, TextAnchor.UpperLeft, "LV 1  XP 0 / 5");
-        manager.timerText = CreateText(hudBar.transform, "Timer", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-80f, -16f), new Vector2(160f, 42f), 30, TextAnchor.UpperCenter, "00:00");
+        var hudBar = CreatePanel(canvasObject.transform, "HUD Bar", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 0f), new Vector2(0f, 82f), new Color(0.035f, 0.04f, 0.035f, 0.9f));
+        CreatePanel(hudBar.transform, "Rust Accent", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(94f, -8f), new Vector2(144f, 6f), new Color(0.75f, 0.18f, 0.08f, 1f));
+        manager.statusText = CreateText(hudBar.transform, "Status", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -12f), new Vector2(920f, 30f), 20, TextAnchor.UpperLeft, "START 버튼을 눌러 폐허 도시로 진입");
+        manager.levelText = CreateText(hudBar.transform, "Level", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -48f), new Vector2(480f, 26f), 20, TextAnchor.UpperLeft, "LV 1  XP 0 / 5");
+        manager.timerText = CreateText(hudBar.transform, "Timer", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-90f, -18f), new Vector2(180f, 42f), 34, TextAnchor.UpperCenter, "00:00");
 
         manager.rewardPanel = CreateRewardPanel(canvasObject.transform);
+        CreateTitlePanel(canvasObject.transform, manager);
+        CreateGameOverPanel(canvasObject.transform, manager);
     }
 
     private static GameObject CreatePanel(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 anchoredPosition, Vector2 size, Color color)
@@ -438,12 +447,13 @@ public static class DesktopSurvivorsSceneBuilder
         var root = new GameObject("Reward Panel");
         root.transform.SetParent(parent, false);
         var image = root.AddComponent<Image>();
-        image.color = new Color(0.055f, 0.06f, 0.052f, 0.95f);
+        image.color = new Color(0.055f, 0.052f, 0.045f, 0.97f);
         var rect = root.GetComponent<RectTransform>();
         rect.anchorMin = new Vector2(0.5f, 0.5f);
         rect.anchorMax = new Vector2(0.5f, 0.5f);
-        rect.sizeDelta = new Vector2(860f, 340f);
+        rect.sizeDelta = new Vector2(980f, 390f);
         rect.anchoredPosition = Vector2.zero;
+        CreatePanel(root.transform, "Top Rust Line", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -4f), new Vector2(0f, 8f), new Color(0.72f, 0.20f, 0.08f, 1f));
 
         var panel = parent.gameObject.AddComponent<SurvivorsRewardPanel>();
         panel.root = root;
@@ -456,21 +466,30 @@ public static class DesktopSurvivorsSceneBuilder
         panel.eraserIcon = LoadSprite(PostRoot + "/Objects/Pickable/Ammo-crate_Green.png");
         panel.rubberBandIcon = LoadSprite(PostRoot + "/Character/Guns/Bullets/Gun-bullet_Whole.png");
 
-        var title = CreateText(root.transform, "Reward Title", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-190f, -24f), new Vector2(380f, 36f), 26, TextAnchor.UpperCenter, "보급품을 선택하세요");
-        title.color = new Color(1f, 0.92f, 0.68f);
+        var title = CreateText(root.transform, "Reward Title", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-260f, -28f), new Vector2(520f, 44f), 32, TextAnchor.UpperCenter, "보급품을 선택하세요");
+        title.color = new Color(1f, 0.82f, 0.45f);
+        var sub = CreateText(root.transform, "Reward Sub", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-310f, -70f), new Vector2(620f, 24f), 17, TextAnchor.UpperCenter, "폐허 속에서 살아남기 위한 강화 하나를 고르세요");
+        sub.color = new Color(0.76f, 0.72f, 0.62f);
 
         for (var i = 0; i < 3; i++)
         {
             var buttonObject = new GameObject("Reward Button " + (i + 1));
             buttonObject.transform.SetParent(root.transform, false);
             var buttonImage = buttonObject.AddComponent<Image>();
-            buttonImage.color = new Color(0.78f, 0.76f, 0.63f, 1f);
+            buttonImage.color = new Color(0.25f, 0.24f, 0.20f, 1f);
             var button = buttonObject.AddComponent<Button>();
+            var colors = button.colors;
+            colors.normalColor = new Color(0.25f, 0.24f, 0.20f, 1f);
+            colors.highlightedColor = new Color(0.47f, 0.35f, 0.22f, 1f);
+            colors.pressedColor = new Color(0.68f, 0.27f, 0.12f, 1f);
+            button.colors = colors;
+
             var buttonRect = buttonObject.GetComponent<RectTransform>();
             buttonRect.anchorMin = new Vector2(0f, 0.5f);
             buttonRect.anchorMax = new Vector2(0f, 0.5f);
-            buttonRect.sizeDelta = new Vector2(250f, 220f);
-            buttonRect.anchoredPosition = new Vector2(160f + i * 270f, -28f);
+            buttonRect.sizeDelta = new Vector2(280f, 230f);
+            buttonRect.anchoredPosition = new Vector2(180f + i * 310f, -42f);
+            CreatePanel(buttonObject.transform, "Button Rust Line", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -3f), new Vector2(0f, 6f), new Color(0.75f, 0.2f, 0.08f, 1f));
 
             var iconObject = new GameObject("Icon");
             iconObject.transform.SetParent(buttonObject.transform, false);
@@ -481,11 +500,11 @@ public static class DesktopSurvivorsSceneBuilder
             iconRect.anchorMin = new Vector2(0.5f, 1f);
             iconRect.anchorMax = new Vector2(0.5f, 1f);
             iconRect.pivot = new Vector2(0.5f, 1f);
-            iconRect.anchoredPosition = new Vector2(0f, -18f);
-            iconRect.sizeDelta = new Vector2(82f, 82f);
+            iconRect.anchoredPosition = new Vector2(0f, -24f);
+            iconRect.sizeDelta = new Vector2(92f, 92f);
 
-            var label = CreateText(buttonObject.transform, "Label", new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(14f, 16f), new Vector2(-28f, 104f), 18, TextAnchor.UpperCenter, "");
-            label.color = new Color(0.08f, 0.07f, 0.055f);
+            var label = CreateText(buttonObject.transform, "Label", new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(16f, 18f), new Vector2(-32f, 100f), 20, TextAnchor.UpperCenter, "");
+            label.color = new Color(0.95f, 0.88f, 0.68f);
 
             panel.buttons[i] = button;
             panel.labels[i] = label;
@@ -494,6 +513,62 @@ public static class DesktopSurvivorsSceneBuilder
 
         root.SetActive(false);
         return panel;
+    }
+
+    private static void CreateTitlePanel(Transform parent, SurvivorsGameManager manager)
+    {
+        var root = CreatePanel(parent, "Title Panel", new Vector2(0f, 0f), new Vector2(1f, 1f), Vector2.zero, Vector2.zero, new Color(0.035f, 0.038f, 0.032f, 0.96f));
+        manager.titlePanel = root;
+        CreatePanel(root.transform, "Blood Line", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-310f, 126f), new Vector2(620f, 7f), new Color(0.62f, 0.12f, 0.07f, 1f));
+
+        var title = CreateText(root.transform, "Game Title", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-430f, 150f), new Vector2(860f, 72f), 54, TextAnchor.MiddleCenter, "WASTELAND SURVIVORS");
+        title.color = new Color(1f, 0.88f, 0.62f);
+        var sub = CreateText(root.transform, "Game Subtitle", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-430f, 82f), new Vector2(860f, 36f), 22, TextAnchor.MiddleCenter, "폐허 도시에서 자동 전투로 좀비 웨이브를 버텨라");
+        sub.color = new Color(0.78f, 0.75f, 0.66f);
+        var rule = CreateText(root.transform, "Game Rule", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-360f, -8f), new Vector2(720f, 84f), 20, TextAnchor.MiddleCenter, "WASD 이동\n가장 가까운 적을 자동 사격\n경험치를 모아 보급품 강화 선택");
+        rule.color = new Color(0.9f, 0.86f, 0.72f);
+
+        var buttonObject = CreateMenuButton(root.transform, "Start Button", "START", new Vector2(0f, -135f), new Vector2(300f, 70f));
+        manager.startButton = buttonObject.GetComponent<Button>();
+    }
+
+    private static void CreateGameOverPanel(Transform parent, SurvivorsGameManager manager)
+    {
+        var root = CreatePanel(parent, "Game Over Panel", new Vector2(0f, 0f), new Vector2(1f, 1f), Vector2.zero, Vector2.zero, new Color(0.06f, 0.02f, 0.018f, 0.94f));
+        manager.gameOverPanel = root;
+        manager.gameOverTitleText = CreateText(root.transform, "Game Over Title", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-280f, 95f), new Vector2(560f, 72f), 58, TextAnchor.MiddleCenter, "YOU DIED");
+        manager.gameOverTitleText.color = new Color(1f, 0.18f, 0.12f);
+        manager.gameOverInfoText = CreateText(root.transform, "Game Over Info", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-360f, 14f), new Vector2(720f, 70f), 24, TextAnchor.MiddleCenter, "");
+        manager.gameOverInfoText.color = new Color(0.92f, 0.84f, 0.68f);
+
+        var buttonObject = CreateMenuButton(root.transform, "Restart Button", "RESTART", new Vector2(0f, -110f), new Vector2(300f, 70f));
+        manager.restartButton = buttonObject.GetComponent<Button>();
+        root.SetActive(false);
+    }
+
+    private static GameObject CreateMenuButton(Transform parent, string name, string label, Vector2 anchoredPosition, Vector2 size)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        var image = go.AddComponent<Image>();
+        image.color = new Color(0.55f, 0.18f, 0.08f, 1f);
+        var button = go.AddComponent<Button>();
+        var colors = button.colors;
+        colors.normalColor = new Color(0.55f, 0.18f, 0.08f, 1f);
+        colors.highlightedColor = new Color(0.78f, 0.32f, 0.14f, 1f);
+        colors.pressedColor = new Color(0.36f, 0.08f, 0.04f, 1f);
+        button.colors = colors;
+
+        var rect = go.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = anchoredPosition;
+        rect.sizeDelta = size;
+
+        var text = CreateText(go.transform, "Label", new Vector2(0f, 0f), new Vector2(1f, 1f), Vector2.zero, Vector2.zero, 28, TextAnchor.MiddleCenter, label);
+        text.color = new Color(1f, 0.9f, 0.62f);
+        return go;
     }
 
     private static Text CreateText(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 anchoredPosition, Vector2 size, int fontSize, TextAnchor alignment, string initialText)
@@ -544,17 +619,16 @@ public static class DesktopSurvivorsSceneBuilder
         return AssetDatabase.LoadAssetAtPath<Sprite>(path);
     }
 
-    private static void AddSceneToBuildSettings(string scenePath)
+    private static void DeleteAssetIfExists(string path)
     {
-        var scenes = new[] { new EditorBuildSettingsScene(scenePath, true) };
-        EditorBuildSettings.scenes = scenes;
+        if (AssetDatabase.LoadAssetAtPath<Object>(path) != null)
+            AssetDatabase.DeleteAsset(path);
     }
 
     private static void EnsureTag(string tag)
     {
         var tagManager = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset")[0]);
         var tags = tagManager.FindProperty("tags");
-
         for (var i = 0; i < tags.arraySize; i++)
         {
             if (tags.GetArrayElementAtIndex(i).stringValue == tag)
