@@ -13,6 +13,8 @@ public class SurvivorsRewardPanel : MonoBehaviour
     public Sprite coffeeIcon;
     public Sprite eraserIcon;
     public Sprite rubberBandIcon;
+    public Sprite grenadeIcon;
+    public Sprite shotgunIcon;
 
     private readonly List<RewardChoice> choices = new();
 
@@ -69,7 +71,10 @@ public class SurvivorsRewardPanel : MonoBehaviour
             case RewardType.MoveSpeed:
                 return coffeeIcon;
             case RewardType.Shotgun:
-                return pencilIcon;
+                return shotgunIcon != null ? shotgunIcon : pencilIcon;
+            case RewardType.Grenade:
+            case RewardType.IncendiaryGrenade:
+                return grenadeIcon != null ? grenadeIcon : rubberBandIcon;
             case RewardType.MaxHealth:
                 return eraserIcon;
             case RewardType.ProjectileSpeed:

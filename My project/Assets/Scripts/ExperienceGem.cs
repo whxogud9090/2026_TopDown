@@ -6,6 +6,7 @@ public class ExperienceGem : MonoBehaviour
     public float pickupDistance = 0.55f;
     public float magnetDistance = 3.0f;
     public float magnetSpeed = 7f;
+    public float rotateSpeed = 120f;
 
     private Transform player;
 
@@ -20,6 +21,8 @@ public class ExperienceGem : MonoBehaviour
     {
         if (player == null)
             return;
+
+        transform.Rotate(0f, 0f, rotateSpeed * Time.deltaTime);
 
         var distance = Vector2.Distance(transform.position, player.position);
         if (distance <= pickupDistance)

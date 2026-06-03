@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &5975890395495800389
+--- !u!1 &4064864402344323802
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,15 +8,15 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2193982417088501817}
-  - component: {fileID: 8200810584270166412}
-  - component: {fileID: 6587795783760921752}
-  - component: {fileID: 2245896205863735139}
-  - component: {fileID: 1107501014507417913}
-  - component: {fileID: 5314512369849901659}
-  - component: {fileID: 4423700511693281793}
-  - component: {fileID: 3943213292224984942}
-  - component: {fileID: 8679037479004921479}
+  - component: {fileID: 3750812048083408623}
+  - component: {fileID: 1385422244098961783}
+  - component: {fileID: 817944574632206571}
+  - component: {fileID: 793073632529326746}
+  - component: {fileID: 1719380324283310883}
+  - component: {fileID: 1240673535669441999}
+  - component: {fileID: 3124450659588314081}
+  - component: {fileID: 1006548424880354921}
+  - component: {fileID: 7752757280418637091}
   m_Layer: 0
   m_Name: SmallZombie
   m_TagString: Enemy
@@ -24,13 +24,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &2193982417088501817
+--- !u!4 &3750812048083408623
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5975890395495800389}
+  m_GameObject: {fileID: 4064864402344323802}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -39,14 +39,14 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!212 &8200810584270166412
+--- !u!212 &1385422244098961783
 SpriteRenderer:
   serializedVersion: 2
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5975890395495800389}
+  m_GameObject: {fileID: 4064864402344323802}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -98,14 +98,14 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!50 &6587795783760921752
+--- !u!50 &817944574632206571
 Rigidbody2D:
   serializedVersion: 5
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5975890395495800389}
+  m_GameObject: {fileID: 4064864402344323802}
   m_BodyType: 0
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
@@ -125,13 +125,13 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 1
   m_Constraints: 4
---- !u!58 &2245896205863735139
+--- !u!58 &793073632529326746
 CircleCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5975890395495800389}
+  m_GameObject: {fileID: 4064864402344323802}
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
@@ -161,13 +161,13 @@ CircleCollider2D:
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
   m_Radius: 0.36
---- !u!114 &1107501014507417913
+--- !u!114 &1719380324283310883
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5975890395495800389}
+  m_GameObject: {fileID: 4064864402344323802}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 42b42fe8191f9984f8b7b2f795cac8bd, type: 3}
@@ -175,14 +175,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Health
   maxHealth: 3
   destroyOnDeath: 1
-  showDamageNumber: 1
---- !u!114 &5314512369849901659
+  showDamageNumber: 0
+--- !u!114 &1240673535669441999
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5975890395495800389}
+  m_GameObject: {fileID: 4064864402344323802}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4544f1375e2b0d48b4b241b33106b43, type: 3}
@@ -190,13 +190,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DamageFlash
   flashColor: {r: 1, g: 0.1, b: 0.06, a: 1}
   flashTime: 0.08
---- !u!114 &4423700511693281793
+--- !u!114 &3124450659588314081
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5975890395495800389}
+  m_GameObject: {fileID: 4064864402344323802}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9bcb4c8a7cef2ff4db7d0c8776b85cc7, type: 3}
@@ -208,13 +208,13 @@ MonoBehaviour:
   charger: 0
   chargeDistance: 3
   chargeMultiplier: 2.5
---- !u!114 &3943213292224984942
+--- !u!114 &1006548424880354921
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5975890395495800389}
+  m_GameObject: {fileID: 4064864402344323802}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4105c943ba94c264fbb52e692c234470, type: 3}
@@ -249,16 +249,16 @@ MonoBehaviour:
   - {fileID: 21300000, guid: a7a824f63ab5f7e4186782acf777da20, type: 3}
   - {fileID: 21300000, guid: 7c07610f3036ac143b4c9247abc04a83, type: 3}
   frameTime: 0.11
---- !u!114 &8679037479004921479
+--- !u!114 &7752757280418637091
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5975890395495800389}
+  m_GameObject: {fileID: 4064864402344323802}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8dafdc5d816db6c4389f3ecfdfca4c9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ExperienceDropper
-  gemPrefab: {fileID: 2363791763250766962, guid: 1adf83932f745f44cba50a1e4426858a, type: 3}
+  gemPrefab: {fileID: 4247309121276710132, guid: 1adf83932f745f44cba50a1e4426858a, type: 3}

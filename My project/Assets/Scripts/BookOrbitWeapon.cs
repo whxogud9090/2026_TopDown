@@ -5,8 +5,10 @@ public class BookOrbitWeapon : MonoBehaviour
 {
     public Sprite bookSprite;
     public int damage = 1;
+    public int level;
+    public int maxLevel = 10;
     public int bookCount;
-    public int maxBookCount = 4;
+    public int maxBookCount = 7;
     public float radius = 1.55f;
     public float rotationSpeed = 170f;
     public float hitCooldown = 0.38f;
@@ -31,9 +33,17 @@ public class BookOrbitWeapon : MonoBehaviour
 
     public void Upgrade()
     {
-        bookCount = Mathf.Clamp(bookCount + 1, 1, maxBookCount);
-        damage = Mathf.Max(1, damage);
+        level = Mathf.Min(maxLevel, level + 1);
+        bookCount = Mathf.Clamp(1 + level / 2, 1, maxBookCount);
+        damage = 1 + level / 4;
+        radius = Mathf.Min(2.15f, radius + 0.04f);
+        rotationSpeed = Mathf.Min(290f, rotationSpeed + 8f);
         EnsureBooks();
+    }
+
+    public bool IsMaxLevel()
+    {
+        return level >= maxLevel;
     }
 
     private void EnsureBooks()

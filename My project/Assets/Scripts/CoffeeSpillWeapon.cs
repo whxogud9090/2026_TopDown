@@ -4,7 +4,9 @@ public class CoffeeSpillWeapon : MonoBehaviour
 {
     public Sprite spillSprite;
     public bool unlocked;
+    public bool evolved;
     public int level;
+    public int maxLevel = 10;
     public int damage = 1;
     public float cooldown = 5.2f;
     public float radius = 1.85f;
@@ -30,10 +32,27 @@ public class CoffeeSpillWeapon : MonoBehaviour
     public void Upgrade()
     {
         unlocked = true;
-        level++;
+        level = Mathf.Min(maxLevel, level + 1);
         damage = Mathf.Max(1, damage + (level > 1 ? 1 : 0));
         radius = Mathf.Min(3.2f, radius + 0.25f);
         cooldown = Mathf.Max(2.4f, cooldown * 0.86f);
+    }
+
+    public bool IsMaxLevel()
+    {
+        return level >= maxLevel;
+    }
+
+    public void Evolve()
+    {
+        if (evolved)
+            return;
+
+        evolved = true;
+        damage += 3;
+        radius = Mathf.Max(radius, 3.4f);
+        duration += 1.2f;
+        cooldown = Mathf.Min(cooldown, 2.6f);
     }
 
     private Transform FindNearestEnemy()

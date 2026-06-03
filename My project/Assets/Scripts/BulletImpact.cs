@@ -28,18 +28,21 @@ public class BulletImpact : MonoBehaviour
             Destroy(gameObject);
     }
 
-    public static void Spawn(Vector3 position)
+    public static void Spawn(Vector3 position, Vector2 direction)
     {
         var go = new GameObject("Bullet Impact");
         go.transform.position = position;
-        go.transform.localScale = Vector3.one * 0.22f;
+        go.transform.localScale = Vector3.one * 0.34f;
 
         var sr = go.AddComponent<SpriteRenderer>();
         sr.sprite = CreateSprite();
-        sr.color = new Color(1f, 0.22f, 0.12f, 0.85f);
+        sr.color = new Color(1f, 0.14f, 0.08f, 0.92f);
         sr.sortingOrder = 12;
 
         go.AddComponent<BulletImpact>();
+
+        for (var i = 0; i < 5; i++)
+            BulletSpark.Spawn(position, direction);
     }
 
     private static Sprite CreateSprite()
@@ -54,7 +57,7 @@ public class BulletImpact : MonoBehaviour
                 var dx = x - 7.5f;
                 var dy = y - 7.5f;
                 var distance = Mathf.Sqrt(dx * dx + dy * dy);
-                var alpha = distance < 5.2f ? 1f : 0f;
+                var alpha = distance < 6.3f ? 1f : 0f;
                 texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
             }
         }

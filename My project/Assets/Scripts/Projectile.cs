@@ -41,19 +41,19 @@ public class Projectile : MonoBehaviour
         if (health != null)
             health.TakeDamage(damage);
 
-        BulletImpact.Spawn(transform.position);
+        BulletImpact.Spawn(transform.position, rb.linearVelocity.normalized);
         Destroy(gameObject);
     }
 
     private void AddTrail()
     {
         var trail = gameObject.AddComponent<TrailRenderer>();
-        trail.time = 0.12f;
-        trail.startWidth = 0.12f;
+        trail.time = 0.08f;
+        trail.startWidth = 0.18f;
         trail.endWidth = 0f;
-        trail.sortingOrder = 6;
+        trail.sortingOrder = 8;
         trail.material = new Material(Shader.Find("Sprites/Default"));
-        trail.startColor = trailColor;
+        trail.startColor = new Color(1f, 0.86f, 0.34f, 0.95f);
         trail.endColor = new Color(trailColor.r, trailColor.g, trailColor.b, 0f);
     }
 }

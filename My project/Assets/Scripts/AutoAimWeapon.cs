@@ -11,9 +11,18 @@ public class AutoAimWeapon : MonoBehaviour
     public int shotgunPellets = 4;
     public float shotgunCooldown = 1.7f;
     public float shotgunSpreadAngle = 34f;
+    public Transform muzzlePoint;
+    public Vector2 CurrentAimDirection { get; private set; } = Vector2.right;
+    public int ShotPower { get; private set; }
 
     private float nextFireTime;
     private float nextShotgunTime;
+    private HeldWeaponVisual heldWeaponVisual;
+
+    private void Awake()
+    {
+        heldWeaponVisual = GetComponent<HeldWeaponVisual>();
+    }
 
     private void Update()
     {
@@ -24,16 +33,23 @@ public class AutoAimWeapon : MonoBehaviour
         if (target == null)
             return;
 
-        var direction = (target.position - transform.position).normalized;
+        var aimStart = muzzlePoint != null ? muzzlePoint.position : transform.position;
+        var direction = (target.position - aimStart).normalized;
+        CurrentAimDirection = direction;
 
-        nextFireTime = Time.time + fireCooldown;
-        FireBullet(direction, damage, projectileSpeed);
-
-        if (shotgunUnlocked && Time.time >= nextShotgunTime)
+        if (shotgunUnlocked)
         {
+            if (Time.time < nextShotgunTime)
+                return;
+
+            nextFireTime = Time.time + shotgunCooldown;
             nextShotgunTime = Time.time + shotgunCooldown;
             FireShotgun(direction);
+            return;
         }
+
+        nextFireTime = Time.time + fireCooldown;
+        FireBullet(direction, damage, projectileSpeed, 1);
     }
 
     public void UnlockShotgun()
@@ -47,23 +63,42 @@ public class AutoAimWeapon : MonoBehaviour
     {
         if (shotgunPellets <= 1)
         {
-            FireBullet(direction, damage, projectileSpeed * 0.95f);
+            FireBullet(direction, damage, projectileSpeed * 0.95f, 2);
             return;
         }
+
+        MuzzleFlash.Spawn(muzzlePoint != null ? muzzlePoint.position : transform.position, direction, 2);
+        CameraShake.Shake(0.12f, 0.16f);
+        ShellCasing.Spawn(transform.position, direction);
+        if (heldWeaponVisual != null)
+            heldWeaponVisual.Kick(direction, 0.26f);
 
         for (var i = 0; i < shotgunPellets; i++)
         {
             var t = shotgunPellets == 1 ? 0.5f : (float)i / (shotgunPellets - 1);
             var angle = Mathf.Lerp(-shotgunSpreadAngle, shotgunSpreadAngle, t);
             var spreadDirection = Quaternion.Euler(0f, 0f, angle) * direction;
-            FireBullet(spreadDirection, Mathf.Max(1, damage), projectileSpeed * 0.9f);
+            FireBullet(spreadDirection, Mathf.Max(1, damage), projectileSpeed * 0.9f, 0);
         }
     }
 
-    private void FireBullet(Vector2 direction, int bulletDamage, float bulletSpeed)
+    private void FireBullet(Vector2 direction, int bulletDamage, float bulletSpeed, int shotPower)
     {
-        var projectile = Instantiate(projectilePrefab, transform.position, Quaternion.identity);
+        var firePosition = muzzlePoint != null ? muzzlePoint.position : transform.position;
+        var projectile = Instantiate(projectilePrefab, firePosition, Quaternion.identity);
         projectile.Launch(direction, bulletDamage, bulletSpeed);
+
+        if (shotPower > 0)
+        {
+            ShotPower = shotPower;
+            MuzzleFlash.Spawn(firePosition, direction, shotPower);
+            BulletTracer.Spawn(firePosition, direction, shotPower);
+            CameraShake.Shake(shotPower == 1 ? 0.055f : 0.12f, shotPower == 1 ? 0.055f : 0.16f);
+            ShellCasing.Spawn(transform.position, direction);
+
+            if (heldWeaponVisual != null)
+                heldWeaponVisual.Kick(direction, shotPower == 1 ? 0.12f : 0.26f);
+        }
     }
 
     private Transform FindNearestEnemy()

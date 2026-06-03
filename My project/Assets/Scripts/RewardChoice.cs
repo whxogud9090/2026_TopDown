@@ -9,6 +9,8 @@ public enum RewardType
     ProjectileSpeed,
     BookOrbit,
     CoffeeSpill,
+    Grenade,
+    IncendiaryGrenade,
     Shotgun
 }
 

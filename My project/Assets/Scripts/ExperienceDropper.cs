@@ -15,6 +15,9 @@ public class ExperienceDropper : MonoBehaviour
 
     private void OnDied(Health deadHealth)
     {
+        if (SurvivorsGameManager.Instance != null)
+            SurvivorsGameManager.Instance.AddKill();
+
         if (gemPrefab != null)
             Instantiate(gemPrefab, transform.position, Quaternion.identity);
     }

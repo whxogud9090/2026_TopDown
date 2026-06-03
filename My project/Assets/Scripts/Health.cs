@@ -5,7 +5,7 @@ public class Health : MonoBehaviour
 {
     public int maxHealth = 3;
     public bool destroyOnDeath = true;
-    public bool showDamageNumber = true;
+    public bool showDamageNumber = false;
 
     public int CurrentHealth { get; private set; }
     public event Action<Health> Died;
