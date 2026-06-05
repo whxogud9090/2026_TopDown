@@ -45,7 +45,7 @@ public static class DesktopSurvivorsSceneBuilder
         var projectilePrefab = CreateProjectilePrefab();
         var healPickupPrefab = CreateSupplyPickupPrefab(HealPickupPrefabPath, "HealPickup", CreateMedkitSpriteAsset(), SupplyPickupType.Heal, Color.white);
         var bombPickupPrefab = CreateSupplyPickupPrefab(BombPickupPrefabPath, "BombPickup", PostRoot + "/Objects/Barrel_rust_red_1.png", SupplyPickupType.Bomb, new Color(1f, 0.32f, 0.12f));
-        var experiencePickupPrefab = CreateSupplyPickupPrefab(ExperiencePickupPrefabPath, "ExperiencePickup", CreateRadiationShardSpriteAsset(), SupplyPickupType.Experience, new Color(0.7f, 1f, 0.42f));
+        var experiencePickupPrefab = CreateSupplyPickupPrefab(ExperiencePickupPrefabPath, "ExperiencePickup", PostRoot + "/Objects/Pickable/Bullet-box_1_Green.png", SupplyPickupType.Experience, Color.white);
         var enemyPrefab = CreateEnemyPrefab(gemPrefab);
         var bossPrefab = CreateBossPrefab(gemPrefab, healPickupPrefab, bombPickupPrefab, experiencePickupPrefab);
         CreatePostApocalypseTilePalette();
@@ -88,6 +88,7 @@ public static class DesktopSurvivorsSceneBuilder
             PostRoot + "/Objects/Pickable/Ammo-crate_Red.png",
             PostRoot + "/Objects/Pickable/Ammo-crate_Green.png",
             PostRoot + "/Objects/Pickable/Bandage.png",
+            PostRoot + "/Objects/Pickable/Bullet-box_1_Green.png",
             PostRoot + "/Objects/Pickable/Bullet-box_1_Red.png",
             PostRoot + "/Objects/Pickable/Pistol.png",
             PostRoot + "/Objects/Pickable/Shotgun.png",
@@ -165,8 +166,8 @@ public static class DesktopSurvivorsSceneBuilder
         var go = new GameObject("SupplyGem");
         go.transform.localScale = Vector3.one * 0.75f;
         var sr = go.AddComponent<SpriteRenderer>();
-        sr.sprite = CreateRadiationShardSpriteAsset();
-        sr.color = new Color(0.72f, 1f, 0.42f);
+        sr.sprite = LoadSprite(PostRoot + "/Objects/Pickable/Bullet-box_1_Green.png");
+        sr.color = Color.white;
         sr.sortingOrder = 3;
 
         var collider = go.AddComponent<CircleCollider2D>();

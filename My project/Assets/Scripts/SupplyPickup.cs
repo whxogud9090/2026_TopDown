@@ -69,11 +69,15 @@ public class SupplyPickup : MonoBehaviour
         if (type == SupplyPickupType.Heal)
         {
             var health = player.GetComponent<Health>();
-            if (health == null || health.CurrentHealth >= health.maxHealth)
-                return;
-
-            health.Heal(healAmount);
-            FloatingText.Spawn(transform.position + Vector3.up * 0.45f, "+HP", new Color(0.35f, 1f, 0.48f, 1f));
+            if (health != null && health.CurrentHealth < health.maxHealth)
+            {
+                health.Heal(healAmount);
+                FloatingText.Spawn(transform.position + Vector3.up * 0.45f, "+HP", new Color(0.35f, 1f, 0.48f, 1f));
+            }
+            else
+            {
+                FloatingText.Spawn(transform.position + Vector3.up * 0.45f, "HP FULL", new Color(0.72f, 1f, 0.72f, 1f));
+            }
         }
         else if (type == SupplyPickupType.Bomb)
         {
