@@ -24,6 +24,7 @@ public class SupplyPickup : MonoBehaviour
     private Transform player;
     private float timer;
     private Vector3 startPosition;
+    private bool pickedUp;
 
     private void Awake()
     {
@@ -72,7 +73,7 @@ public class SupplyPickup : MonoBehaviour
             return;
         }
 
-        if (distance <= magnetDistance)
+        if (magnetDistance > 0f && distance <= magnetDistance)
         {
             var nextPosition = Vector2.MoveTowards(transform.position, player.position, magnetSpeed * Time.deltaTime);
             transform.position = new Vector3(nextPosition.x, nextPosition.y, transform.position.z);
@@ -80,8 +81,34 @@ public class SupplyPickup : MonoBehaviour
         }
     }
 
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        TryPickupFromCollider(other);
+    }
+
+    private void OnTriggerStay2D(Collider2D other)
+    {
+        TryPickupFromCollider(other);
+    }
+
+    private void TryPickupFromCollider(Collider2D other)
+    {
+        if (pickedUp || !other.CompareTag("Player"))
+            return;
+
+        if (player == null)
+            player = other.transform;
+
+        PickUp();
+    }
+
     private void PickUp()
     {
+        if (pickedUp)
+            return;
+
+        pickedUp = true;
+
         if (type == SupplyPickupType.Heal)
         {
             var health = player.GetComponent<Health>();

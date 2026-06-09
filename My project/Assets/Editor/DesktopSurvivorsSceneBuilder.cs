@@ -563,6 +563,8 @@ public static class DesktopSurvivorsSceneBuilder
         pickup.type = type;
         pickup.healAmount = 2;
         pickup.experienceAmount = 5;
+        pickup.pickupDistance = type == SupplyPickupType.Experience ? 0.6f : 0.9f;
+        pickup.magnetDistance = type == SupplyPickupType.Experience ? 2.4f : 0f;
         pickup.rotateSpeed = type == SupplyPickupType.Experience ? 0f : type == SupplyPickupType.Bomb ? 130f : 95f;
         pickup.bobHeight = 0.13f;
 
@@ -869,7 +871,7 @@ public static class DesktopSurvivorsSceneBuilder
         AssignPlayerSprites(controller);
 
         var health = go.AddComponent<Health>();
-        health.maxHealth = 5;
+        health.maxHealth = 10;
         health.destroyOnDeath = false;
         health.showDamageNumber = false;
 
@@ -937,11 +939,15 @@ public static class DesktopSurvivorsSceneBuilder
         spawner.enemyPrefab = enemyPrefab;
         spawner.player = player;
         spawner.spawnInterval = 1.05f;
-        spawner.minSpawnInterval = 0.28f;
+        spawner.minSpawnInterval = 0.22f;
         spawner.spawnDistance = 14f;
-        spawner.maxEnemies = 75;
-        spawner.maxEnemiesLimit = 160;
+        spawner.maxEnemies = 85;
+        spawner.maxEnemiesLimit = 220;
         spawner.difficultyStepTime = 30f;
+        spawner.crowdRampStartTime = 60f;
+        spawner.waveStartTime = 60f;
+        spawner.waveInterval = 120f;
+        spawner.baseWaveSpawnCount = 8;
     }
 
     private static void CreateBossSpawner(EnemyController bossPrefab, Transform player)
@@ -963,7 +969,8 @@ public static class DesktopSurvivorsSceneBuilder
         spawner.healPrefab = healPickupPrefab;
         spawner.bombPrefab = bombPickupPrefab;
         spawner.player = player;
-        spawner.spawnInterval = 17f;
+        spawner.firstSpawnTime = 60f;
+        spawner.spawnInterval = 60f;
         spawner.spawnDistance = 8f;
         spawner.bombStartTime = 90f;
         spawner.bombMinEnemyCount = 18;
@@ -1018,18 +1025,18 @@ public static class DesktopSurvivorsSceneBuilder
         fillObject.transform.SetParent(background.transform, false);
         var fill = fillObject.AddComponent<Image>();
         fill.color = new Color(0.08f, 0.55f, 1f, 1f);
-        fill.type = Image.Type.Filled;
-        fill.fillMethod = Image.FillMethod.Horizontal;
-        fill.fillOrigin = (int)Image.OriginHorizontal.Left;
+        fill.type = Image.Type.Simple;
         fill.fillAmount = 0f;
 
         var fillRect = fillObject.GetComponent<RectTransform>();
         fillRect.anchorMin = Vector2.zero;
-        fillRect.anchorMax = Vector2.one;
-        fillRect.offsetMin = new Vector2(2f, 2f);
-        fillRect.offsetMax = new Vector2(-2f, -2f);
+        fillRect.anchorMax = new Vector2(0f, 1f);
+        fillRect.pivot = new Vector2(0f, 0.5f);
+        fillRect.offsetMin = Vector2.zero;
+        fillRect.offsetMax = Vector2.zero;
 
         manager.experienceBarFill = fill;
+        manager.experienceBarFillRect = fillRect;
         manager.experienceBarText = CreateText(background.transform, "Experience Bar Text", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(220f, 20f), 15, TextAnchor.MiddleCenter, "XP 0 / 5");
         manager.experienceBarText.color = new Color(0.82f, 0.94f, 1f, 1f);
     }

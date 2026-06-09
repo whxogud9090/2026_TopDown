@@ -12,30 +12,77 @@ public class SurvivorsEnemySpawner : MonoBehaviour
     public float difficultyStepTime = 25f;
     public int extraEnemyPerStep = 1;
     public float eliteStartTime = 75f;
+    public float crowdRampStartTime = 60f;
+    public float waveStartTime = 60f;
+    public float waveInterval = 120f;
+    public int baseWaveSpawnCount = 8;
 
     private float nextSpawnTime;
+    private float nextWaveTime;
+    private int waveNumber;
+
+    private void Start()
+    {
+        nextWaveTime = waveStartTime;
+    }
 
     private void Update()
     {
         if (enemyPrefab == null || player == null || Time.time < nextSpawnTime)
             return;
 
+        TrySpawnWave();
+
         if (GameObject.FindGameObjectsWithTag("Enemy").Length >= maxEnemies)
             return;
 
         var difficulty = GetDifficultyLevel();
-        var currentInterval = Mathf.Max(minSpawnInterval, spawnInterval - difficulty * 0.055f);
+        var crowdRamp = GetCrowdRampLevel();
+        var currentInterval = Mathf.Max(minSpawnInterval, spawnInterval - difficulty * 0.055f - crowdRamp * 0.04f);
         nextSpawnTime = Time.time + currentInterval;
-        maxEnemies = Mathf.Min(maxEnemiesLimit, 70 + difficulty * 8);
+        maxEnemies = Mathf.Min(maxEnemiesLimit, 70 + difficulty * 8 + crowdRamp * 10);
 
-        var spawnCount = Mathf.Min(4, 1 + difficulty / 3);
+        var spawnCount = Mathf.Min(6, 1 + difficulty / 3 + crowdRamp);
         for (var i = 0; i < spawnCount; i++)
             SpawnEnemy(difficulty);
+    }
+
+    private void TrySpawnWave()
+    {
+        if (Time.timeSinceLevelLoad < nextWaveTime)
+            return;
+
+        var currentEnemyCount = GameObject.FindGameObjectsWithTag("Enemy").Length;
+        if (currentEnemyCount >= maxEnemies)
+        {
+            nextWaveTime = Time.timeSinceLevelLoad + 8f;
+            return;
+        }
+
+        waveNumber++;
+        var difficulty = GetDifficultyLevel();
+        var burstCount = Mathf.Min(22, baseWaveSpawnCount + waveNumber * 2);
+        burstCount = Mathf.Min(burstCount, maxEnemies - currentEnemyCount);
+
+        for (var i = 0; i < burstCount; i++)
+            SpawnEnemy(difficulty);
+
+        FloatingText.Spawn(player.position + Vector3.up * 1.45f, "WAVE " + waveNumber, new Color(1f, 0.35f, 0.15f, 1f));
+        CameraShake.Shake(0.08f, 0.1f);
+        nextWaveTime = Time.timeSinceLevelLoad + waveInterval;
     }
 
     private int GetDifficultyLevel()
     {
         return Mathf.FloorToInt(Time.timeSinceLevelLoad / difficultyStepTime);
+    }
+
+    private int GetCrowdRampLevel()
+    {
+        if (Time.timeSinceLevelLoad < crowdRampStartTime)
+            return 0;
+
+        return 1 + Mathf.FloorToInt((Time.timeSinceLevelLoad - crowdRampStartTime) / 45f);
     }
 
     private void SpawnEnemy(int difficulty)

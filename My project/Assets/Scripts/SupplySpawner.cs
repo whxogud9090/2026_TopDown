@@ -5,6 +5,7 @@ public class SupplySpawner : MonoBehaviour
     public SupplyPickup healPrefab;
     public SupplyPickup bombPrefab;
     public Transform player;
+    public float firstSpawnTime = 60f;
     public float spawnInterval = 18f;
     public float spawnDistance = 7.5f;
     public float bombStartTime = 90f;
@@ -16,7 +17,7 @@ public class SupplySpawner : MonoBehaviour
 
     private void Start()
     {
-        nextSpawnTime = Time.time + 8f;
+        nextSpawnTime = Time.time + firstSpawnTime;
     }
 
     private void Update()
@@ -26,7 +27,7 @@ public class SupplySpawner : MonoBehaviour
 
         if (FindObjectsByType<SupplyPickup>(FindObjectsSortMode.None).Length >= maxPickups)
         {
-            nextSpawnTime = Time.time + 3f;
+            nextSpawnTime = Time.time + 8f;
             return;
         }
 

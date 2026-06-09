@@ -26,6 +26,7 @@ public class SurvivorsGameManager : MonoBehaviour
     public Text timerText;
     public Text experienceBarText;
     public Image experienceBarFill;
+    public RectTransform experienceBarFillRect;
     public Text gameOverTitleText;
     public Text gameOverInfoText;
 
@@ -317,8 +318,12 @@ public class SurvivorsGameManager : MonoBehaviour
         if (levelText != null)
             levelText.text = "LV " + level + "  KILL " + killCount;
 
+        var experienceRatio = experienceToNextLevel > 0 ? Mathf.Clamp01((float)experience / experienceToNextLevel) : 0f;
         if (experienceBarFill != null)
-            experienceBarFill.fillAmount = experienceToNextLevel > 0 ? Mathf.Clamp01((float)experience / experienceToNextLevel) : 0f;
+            experienceBarFill.fillAmount = experienceRatio;
+
+        if (experienceBarFillRect != null)
+            experienceBarFillRect.anchorMax = new Vector2(experienceRatio, 1f);
 
         if (experienceBarText != null)
             experienceBarText.text = "XP " + experience + " / " + experienceToNextLevel;
