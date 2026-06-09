@@ -25,6 +25,22 @@ public class SupplyPickup : MonoBehaviour
     private float timer;
     private Vector3 startPosition;
 
+    private void Awake()
+    {
+        var colliders = GetComponents<Collider2D>();
+        foreach (var pickupCollider in colliders)
+            pickupCollider.isTrigger = true;
+
+        var body = GetComponent<Rigidbody2D>();
+        if (body != null)
+        {
+            body.bodyType = RigidbodyType2D.Kinematic;
+            body.simulated = true;
+            body.linearVelocity = Vector2.zero;
+            body.angularVelocity = 0f;
+        }
+    }
+
     private void Start()
     {
         startPosition = transform.position;

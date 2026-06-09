@@ -14,6 +14,8 @@ public class InfiniteWastelandMap : MonoBehaviour
     public int updateStep = 8;
     public int roadSpacing = 30;
     public int roadHalfWidth = 3;
+    public bool useRoadPattern;
+    public bool useCrackDetails;
 
     private readonly HashSet<Vector3Int> activeCells = new();
     private Vector3Int lastCenterCell = new(99999, 99999, 0);
@@ -71,14 +73,14 @@ public class InfiniteWastelandMap : MonoBehaviour
 
     private void PaintCell(Vector3Int cell)
     {
-        var tile = IsRoad(cell) ? PickTile(roadTiles, cell.x, cell.y, 9) : PickGroundTile(cell);
+        var tile = useRoadPattern && IsRoad(cell) ? PickTile(roadTiles, cell.x, cell.y, 9) : PickGroundTile(cell);
         groundTilemap.SetTile(cell, tile);
 
         if (detailTilemap == null)
             return;
 
         var detailRoll = Hash01(cell.x, cell.y, 33);
-        if (!IsRoad(cell) && detailRoll > 0.88f && crackTiles != null && crackTiles.Length > 0)
+        if (useCrackDetails && !IsRoad(cell) && detailRoll > 0.88f && crackTiles != null && crackTiles.Length > 0)
             detailTilemap.SetTile(cell, PickTile(crackTiles, cell.x, cell.y, 17));
         else
             detailTilemap.SetTile(cell, null);
@@ -87,7 +89,7 @@ public class InfiniteWastelandMap : MonoBehaviour
     private TileBase PickGroundTile(Vector3Int cell)
     {
         var roll = Hash01(cell.x, cell.y, 5);
-        if (crackTiles != null && crackTiles.Length > 0 && roll > 0.82f)
+        if (useCrackDetails && crackTiles != null && crackTiles.Length > 0 && roll > 0.82f)
             return PickTile(crackTiles, cell.x, cell.y, 21);
 
         return PickTile(dirtTiles, cell.x, cell.y, 3);

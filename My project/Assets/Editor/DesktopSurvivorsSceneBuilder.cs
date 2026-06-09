@@ -17,6 +17,7 @@ public static class DesktopSurvivorsSceneBuilder
     private const string EnemyPrefabPath = PrefabRoot + "/SmallZombie.prefab";
     private const string BossPrefabPath = PrefabRoot + "/BruteZombie.prefab";
     private const string GemPrefabPath = PrefabRoot + "/SupplyGem.prefab";
+    private const string RareGemPrefabPath = PrefabRoot + "/RareSupplyGem.prefab";
     private const string HealPickupPrefabPath = PrefabRoot + "/HealPickup.prefab";
     private const string BombPickupPrefabPath = PrefabRoot + "/BombPickup.prefab";
     private const string ExperiencePickupPrefabPath = PrefabRoot + "/ExperiencePickup.prefab";
@@ -41,12 +42,13 @@ public static class DesktopSurvivorsSceneBuilder
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         scene.name = "WastelandSurvivorsPrototype";
 
-        var gemPrefab = CreateGemPrefab();
+        var gemPrefab = CreateGemPrefab(GemPrefabPath, "SupplyGem", true, 1, 0.38f);
+        var rareGemPrefab = CreateGemPrefab(RareGemPrefabPath, "RareSupplyGem", false, 5, 0.48f);
         var projectilePrefab = CreateProjectilePrefab();
         var healPickupPrefab = CreateSupplyPickupPrefab(HealPickupPrefabPath, "HealPickup", CreateMedkitSpriteAsset(), SupplyPickupType.Heal, Color.white);
         var bombPickupPrefab = CreateSupplyPickupPrefab(BombPickupPrefabPath, "BombPickup", PostRoot + "/Objects/Barrel_rust_red_1.png", SupplyPickupType.Bomb, new Color(1f, 0.32f, 0.12f));
-        var experiencePickupPrefab = CreateSupplyPickupPrefab(ExperiencePickupPrefabPath, "ExperiencePickup", PostRoot + "/Objects/Pickable/Bullet-box_1_Green.png", SupplyPickupType.Experience, Color.white);
-        var enemyPrefab = CreateEnemyPrefab(gemPrefab);
+        var experiencePickupPrefab = CreateSupplyPickupPrefab(ExperiencePickupPrefabPath, "ExperiencePickup", CreateXpOrbSpriteAsset(false), SupplyPickupType.Experience, Color.white);
+        var enemyPrefab = CreateEnemyPrefab(gemPrefab, rareGemPrefab);
         var bossPrefab = CreateBossPrefab(gemPrefab, healPickupPrefab, bombPickupPrefab, experiencePickupPrefab);
         CreatePostApocalypseTilePalette();
         CreateMapDecorPrefabs();
@@ -102,6 +104,10 @@ public static class DesktopSurvivorsSceneBuilder
             PostRoot + "/Objects/Vehicles/Overgrown/Car_1_Overgrown/Bleak-Yellow/Car_1_Overgrown_Bleak-Yellow_Red.png",
             PostRoot + "/Objects/Vehicles/Normal/Car_6_Scrap/Car_6_Red_Scrap.png",
             PostRoot + "/Objects/Vehicles/Normal/Car_8_Bus/Car_8_Red_Bus.png",
+            PostRoot + "/Objects/Vehicles/Rust/Car_8_Rust_Bus/Car_8_Rust_Red_Bus.png",
+            PostRoot + "/Objects/Vehicles/Rust/Car_7_Rust_Truck/Car_7_Rust_Red_Truck_.png",
+            PostRoot + "/Objects/Vehicles/Rust/Car_3_Rust_Van/Car_3_Rust_Blue_Van.png",
+            PostRoot + "/Objects/Vehicles/Overgrown/Car_8_Overgrown_Bus/Bleak-Yellow/Car_8_Overgrown_Bleak-Yellow_Red_Bus.png",
             PostRoot + "/Objects/Buildings/Door_3_Boarded-up_Beige.png",
             PostRoot + "/Objects/Buildings/Destroyed-wall_not-corner.png",
             PostRoot + "/Objects/Container/Container_3_Gray_Horizontal.png"
@@ -159,23 +165,26 @@ public static class DesktopSurvivorsSceneBuilder
             importer.SaveAndReimport();
     }
 
-    private static ExperienceGem CreateGemPrefab()
+    private static ExperienceGem CreateGemPrefab(string prefabPath, string objectName, bool smallBlue, int value, float scale)
     {
-        DeleteAssetIfExists(GemPrefabPath);
+        DeleteAssetIfExists(prefabPath);
 
-        var go = new GameObject("SupplyGem");
-        go.transform.localScale = Vector3.one * 0.75f;
+        var go = new GameObject(objectName);
+        go.transform.localScale = Vector3.one * scale;
         var sr = go.AddComponent<SpriteRenderer>();
-        sr.sprite = LoadSprite(PostRoot + "/Objects/Pickable/Bullet-box_1_Green.png");
+        sr.sprite = CreateXpOrbSpriteAsset(smallBlue);
         sr.color = Color.white;
         sr.sortingOrder = 3;
 
         var collider = go.AddComponent<CircleCollider2D>();
         collider.isTrigger = true;
-        collider.radius = 0.34f;
+        collider.radius = 0.28f;
 
-        go.AddComponent<ExperienceGem>();
-        var prefab = PrefabUtility.SaveAsPrefabAsset(go, GemPrefabPath).GetComponent<ExperienceGem>();
+        var gem = go.AddComponent<ExperienceGem>();
+        gem.value = value;
+        gem.rotateSpeed = 0f;
+
+        var prefab = PrefabUtility.SaveAsPrefabAsset(go, prefabPath).GetComponent<ExperienceGem>();
         Object.DestroyImmediate(go);
         return prefab;
     }
@@ -224,6 +233,165 @@ public static class DesktopSurvivorsSceneBuilder
         return LoadSprite(texturePath);
     }
 
+    private static Sprite CreateXpCoreSpriteAsset()
+    {
+        var texturePath = GeneratedRoot + "/xp_core_pickup.png";
+        if (!File.Exists(texturePath))
+        {
+            EnsureFolder(GeneratedRoot);
+            var texture = new Texture2D(24, 24, TextureFormat.RGBA32, false);
+            texture.filterMode = FilterMode.Point;
+
+            for (var y = 0; y < 24; y++)
+            {
+                for (var x = 0; x < 24; x++)
+                {
+                    var color = new Color(0f, 0f, 0f, 0f);
+
+                    var dx = (x - 11.5f) / 8.5f;
+                    var dy = (y - 11.5f) / 8.5f;
+                    var core = dx * dx + dy * dy <= 1f;
+                    var outer = dx * dx + dy * dy <= 1.28f;
+                    var shine = (x >= 8 && x <= 11 && y >= 13 && y <= 17)
+                        || (x == 7 && y == 12);
+                    var center = x >= 10 && x <= 13 && y >= 10 && y <= 13;
+
+                    if (outer)
+                        color = new Color(0.04f, 0.16f, 0.28f, 0.95f);
+                    if (core)
+                        color = new Color(0.15f, 0.78f, 1f, 1f);
+                    if (center)
+                        color = new Color(0.82f, 1f, 1f, 1f);
+                    if (shine)
+                        color = new Color(0.92f, 1f, 1f, 1f);
+
+                    texture.SetPixel(x, y, color);
+                }
+            }
+
+            File.WriteAllBytes(texturePath, texture.EncodeToPNG());
+            AssetDatabase.ImportAsset(texturePath);
+        }
+
+        ConfigureTexture(texturePath, 16);
+        return LoadSprite(texturePath);
+    }
+
+    private static Sprite CreateSalvageXpSpriteAsset()
+    {
+        var texturePath = GeneratedRoot + "/salvage_xp_pickup.png";
+        if (!File.Exists(texturePath))
+        {
+            EnsureFolder(GeneratedRoot);
+            var texture = new Texture2D(24, 24, TextureFormat.RGBA32, false);
+            texture.filterMode = FilterMode.Point;
+
+            for (var y = 0; y < 24; y++)
+            {
+                for (var x = 0; x < 24; x++)
+                {
+                    var color = new Color(0f, 0f, 0f, 0f);
+
+                    var casingA = x >= 5 && x <= 9 && y >= 7 && y <= 17;
+                    var casingB = x >= 13 && x <= 17 && y >= 6 && y <= 16;
+                    var casingCapA = casingA && (y == 7 || y == 17);
+                    var casingCapB = casingB && (y == 6 || y == 16);
+                    var metalChunk = x >= 9 && x <= 15 && y >= 14 && y <= 19
+                        && Mathf.Abs(x - 12) + Mathf.Abs(y - 16) <= 5;
+                    var outline = (casingA || casingB || metalChunk)
+                        && (x == 5 || x == 9 || x == 13 || x == 17 || y == 6 || y == 7 || y == 17 || y == 19);
+                    var shine = (x == 6 && y >= 9 && y <= 14) || (x == 14 && y >= 8 && y <= 13);
+
+                    if (casingA || casingB)
+                        color = new Color(0.82f, 0.58f, 0.22f, 1f);
+                    if (casingCapA || casingCapB)
+                        color = new Color(0.55f, 0.36f, 0.12f, 1f);
+                    if (metalChunk)
+                        color = new Color(0.48f, 0.52f, 0.48f, 1f);
+                    if (outline)
+                        color = new Color(0.12f, 0.10f, 0.07f, 1f);
+                    if (shine)
+                        color = new Color(1f, 0.86f, 0.42f, 1f);
+
+                    texture.SetPixel(x, y, color);
+                }
+            }
+
+            File.WriteAllBytes(texturePath, texture.EncodeToPNG());
+            AssetDatabase.ImportAsset(texturePath);
+        }
+
+        ConfigureTexture(texturePath, 16);
+        return LoadSprite(texturePath);
+    }
+
+    private static Sprite CreateXpOrbSpriteAsset(bool smallBlue)
+    {
+        var texturePath = smallBlue ? GeneratedRoot + "/xp_orb_blue.png" : GeneratedRoot + "/xp_orb_gold.png";
+        EnsureFolder(GeneratedRoot);
+        var texture = new Texture2D(16, 16, TextureFormat.RGBA32, false);
+        texture.filterMode = FilterMode.Point;
+
+        var edge = smallBlue ? new Color(0.02f, 0.09f, 0.34f, 1f) : new Color(0.42f, 0.25f, 0.03f, 1f);
+        var fill = smallBlue ? new Color(0.08f, 0.52f, 1f, 1f) : new Color(1f, 0.72f, 0.08f, 1f);
+        var highlight = smallBlue ? new Color(0.62f, 0.92f, 1f, 1f) : new Color(1f, 0.94f, 0.42f, 1f);
+
+        for (var y = 0; y < 16; y++)
+        {
+            for (var x = 0; x < 16; x++)
+            {
+                var color = new Color(0f, 0f, 0f, 0f);
+                var dx = x - 7.5f;
+                var dy = y - 7.5f;
+                var distance = Mathf.Sqrt(dx * dx + dy * dy);
+
+                if (distance <= 6.2f)
+                    color = edge;
+                if (distance <= 5.0f)
+                    color = fill;
+                if (distance <= 1.3f || (x >= 5 && x <= 6 && y >= 9 && y <= 10))
+                    color = highlight;
+
+                texture.SetPixel(x, y, color);
+            }
+        }
+
+        File.WriteAllBytes(texturePath, texture.EncodeToPNG());
+        AssetDatabase.ImportAsset(texturePath);
+
+        ConfigureTexture(texturePath, 16);
+        return LoadSprite(texturePath);
+    }
+
+    private static Sprite CreateShadowSpriteAsset()
+    {
+        var texturePath = GeneratedRoot + "/object_shadow.png";
+        if (!File.Exists(texturePath))
+        {
+            EnsureFolder(GeneratedRoot);
+            var texture = new Texture2D(48, 20, TextureFormat.RGBA32, false);
+            texture.filterMode = FilterMode.Bilinear;
+
+            for (var y = 0; y < 20; y++)
+            {
+                for (var x = 0; x < 48; x++)
+                {
+                    var dx = (x - 23.5f) / 22f;
+                    var dy = (y - 9.5f) / 8f;
+                    var distance = dx * dx + dy * dy;
+                    var alpha = Mathf.Clamp01(1f - distance) * 0.55f;
+                    texture.SetPixel(x, y, new Color(0f, 0f, 0f, alpha));
+                }
+            }
+
+            File.WriteAllBytes(texturePath, texture.EncodeToPNG());
+            AssetDatabase.ImportAsset(texturePath);
+        }
+
+        ConfigureTexture(texturePath, 16);
+        return LoadSprite(texturePath);
+    }
+
     private static Projectile CreateProjectilePrefab()
     {
         DeleteAssetIfExists(ProjectilePrefabPath);
@@ -253,7 +421,7 @@ public static class DesktopSurvivorsSceneBuilder
         return prefab;
     }
 
-    private static EnemyController CreateEnemyPrefab(ExperienceGem gemPrefab)
+    private static EnemyController CreateEnemyPrefab(ExperienceGem gemPrefab, ExperienceGem rareGemPrefab)
     {
         DeleteAssetIfExists(EnemyPrefabPath);
 
@@ -293,6 +461,7 @@ public static class DesktopSurvivorsSceneBuilder
 
         var dropper = go.AddComponent<ExperienceDropper>();
         dropper.gemPrefab = gemPrefab;
+        dropper.eliteGemPrefab = rareGemPrefab;
 
         var prefab = PrefabUtility.SaveAsPrefabAsset(go, EnemyPrefabPath).GetComponent<EnemyController>();
         Object.DestroyImmediate(go);
@@ -374,7 +543,7 @@ public static class DesktopSurvivorsSceneBuilder
         DeleteAssetIfExists(prefabPath);
 
         var go = new GameObject(objectName);
-        go.transform.localScale = Vector3.one * 0.95f;
+        go.transform.localScale = Vector3.one * (type == SupplyPickupType.Experience ? 0.5f : 0.95f);
 
         var sr = go.AddComponent<SpriteRenderer>();
         sr.sprite = sprite;
@@ -383,13 +552,18 @@ public static class DesktopSurvivorsSceneBuilder
 
         var collider = go.AddComponent<CircleCollider2D>();
         collider.isTrigger = true;
-        collider.radius = 0.42f;
+        collider.radius = type == SupplyPickupType.Experience ? 0.3f : 0.42f;
+
+        var rb = go.AddComponent<Rigidbody2D>();
+        rb.bodyType = RigidbodyType2D.Kinematic;
+        rb.gravityScale = 0f;
+        rb.freezeRotation = true;
 
         var pickup = go.AddComponent<SupplyPickup>();
         pickup.type = type;
         pickup.healAmount = 2;
         pickup.experienceAmount = 5;
-        pickup.rotateSpeed = type == SupplyPickupType.Bomb ? 130f : 95f;
+        pickup.rotateSpeed = type == SupplyPickupType.Experience ? 0f : type == SupplyPickupType.Bomb ? 130f : 95f;
         pickup.bobHeight = 0.13f;
 
         var prefab = PrefabUtility.SaveAsPrefabAsset(go, prefabPath).GetComponent<SupplyPickup>();
@@ -458,28 +632,15 @@ public static class DesktopSurvivorsSceneBuilder
         var background = CreateTilemapObject(gridObject.transform, "Infinite Ruined City Ground", 0);
         var detail = CreateTilemapObject(gridObject.transform, "Cracks And Debris Detail", 1);
 
-        var dirtA = CreateTile("waste_bg_00_00");
-        var dirtB = CreateTile("waste_bg_01_00");
-        var cracked = CreateTile("waste_bg_10_00");
-        var roadA = CreateTile("waste_bg_00_07");
-        var roadB = CreateTile("waste_bg_01_07");
-        var roadC = CreateTile("waste_bg_02_07");
-
-        var dirtTiles = new TileBase[] { dirtA, dirtB };
-        var crackTiles = new TileBase[] { cracked };
-        var roadTiles = new TileBase[] { roadA, roadB, roadC };
+        var floorTile = CreateTile("waste_bg_00_00");
+        var dirtTiles = new TileBase[] { floorTile };
 
         for (var x = -60; x <= 60; x++)
         {
             for (var y = -46; y <= 46; y++)
             {
                 var cell = new Vector3Int(x, y, 0);
-                var road = IsPreviewRoad(cell);
-                var tileIndex = Mathf.Abs((x * 17 + y * 31) % 3);
-                background.SetTile(cell, road ? roadTiles[tileIndex] : dirtTiles[Mathf.Abs((x + y) % dirtTiles.Length)]);
-
-                if (!road && Mathf.Abs((x * 11 + y * 19) % 9) == 0)
-                    detail.SetTile(cell, cracked);
+                background.SetTile(cell, floorTile);
             }
         }
 
@@ -487,12 +648,12 @@ public static class DesktopSurvivorsSceneBuilder
         map.groundTilemap = background;
         map.detailTilemap = detail;
         map.dirtTiles = dirtTiles;
-        map.crackTiles = crackTiles;
-        map.roadTiles = roadTiles;
+        map.crackTiles = new TileBase[0];
+        map.roadTiles = new TileBase[0];
         map.renderRadius = 54;
         map.updateStep = 8;
-        map.roadSpacing = 30;
-        map.roadHalfWidth = 3;
+        map.useRoadPattern = false;
+        map.useCrackDetails = false;
         return map;
     }
 
@@ -575,6 +736,9 @@ public static class DesktopSurvivorsSceneBuilder
         CreateDecorationPrefab("Decor_MetalPlates", PostRoot + "/Objects/Metal-Plates.png", Vector3.one);
         CreateDecorationPrefab("Decor_TrafficCone", PostRoot + "/Objects/Traffic-cone.png", Vector3.one);
         CreateDecorationPrefab("Decor_RustBarrel", PostRoot + "/Objects/Barrel_rust_red_1.png", Vector3.one);
+        CreateDecorationPrefab("Decor_BrokenBus", PostRoot + "/Objects/Vehicles/Rust/Car_8_Rust_Bus/Car_8_Rust_Red_Bus.png", Vector3.one * 1.55f);
+        CreateDecorationPrefab("Decor_RustTruck", PostRoot + "/Objects/Vehicles/Rust/Car_7_Rust_Truck/Car_7_Rust_Red_Truck_.png", Vector3.one * 1.45f);
+        CreateDecorationPrefab("Decor_RustVan", PostRoot + "/Objects/Vehicles/Rust/Car_3_Rust_Van/Car_3_Rust_Blue_Van.png", Vector3.one * 1.35f);
     }
 
     private static void CreateDecorationPrefab(string name, string spritePath, Vector3 scale)
@@ -584,9 +748,13 @@ public static class DesktopSurvivorsSceneBuilder
 
         var go = new GameObject(name);
         go.transform.localScale = scale;
-        var renderer = go.AddComponent<SpriteRenderer>();
+        AddDecorationShadow(go.transform, scale.x > 1.2f);
+
+        var visual = new GameObject("Visual");
+        visual.transform.SetParent(go.transform, false);
+        var renderer = visual.AddComponent<SpriteRenderer>();
         renderer.sprite = LoadSprite(spritePath);
-        renderer.sortingOrder = 2;
+        renderer.sortingOrder = 4;
 
         PrefabUtility.SaveAsPrefabAsset(go, prefabPath);
         Object.DestroyImmediate(go);
@@ -595,22 +763,26 @@ public static class DesktopSurvivorsSceneBuilder
     private static void ConfigureDecorations(Transform player)
     {
         var root = new GameObject("Wasteland Decorations");
-        CreateDecoration(root.transform, "Overgrown Car", PostRoot + "/Objects/Vehicles/Overgrown/Car_1_Overgrown/Bleak-Yellow/Car_1_Overgrown_Bleak-Yellow_Red.png", new Vector3(-20f, 14f, 0f), Vector3.one * 1.25f);
-        CreateDecoration(root.transform, "Scrap Car", PostRoot + "/Objects/Vehicles/Normal/Car_6_Scrap/Car_6_Red_Scrap.png", new Vector3(24f, -12f, 0f), Vector3.one * 1.15f);
-        CreateDecoration(root.transform, "Broken Bus", PostRoot + "/Objects/Vehicles/Normal/Car_8_Bus/Car_8_Red_Bus.png", new Vector3(42f, 18f, 0f), Vector3.one * 1.2f);
-        CreateDecoration(root.transform, "Ammo Crate", PostRoot + "/Objects/Pickable/Ammo-crate_Red.png", new Vector3(-8f, -16f, 0f), Vector3.one * 1.1f);
-        CreateDecoration(root.transform, "Rust Barrel A", PostRoot + "/Objects/Barrel_rust_red_1.png", new Vector3(13f, 10f, 0f), Vector3.one);
-        CreateDecoration(root.transform, "Rust Barrel B", PostRoot + "/Objects/Barrel_rust_blue_2.png", new Vector3(-33f, -8f, 0f), Vector3.one);
-        CreateDecoration(root.transform, "Boarded Door", PostRoot + "/Objects/Buildings/Door_3_Boarded-up_Beige.png", new Vector3(-48f, 26f, 0f), Vector3.one * 1.5f);
-        CreateDecoration(root.transform, "Destroyed Wall", PostRoot + "/Objects/Buildings/Destroyed-wall_not-corner.png", new Vector3(55f, -28f, 0f), Vector3.one * 1.4f);
-        CreateDecoration(root.transform, "Container", PostRoot + "/Objects/Container/Container_3_Gray_Horizontal.png", new Vector3(-58f, -34f, 0f), Vector3.one * 1.2f);
-        CreateDecoration(root.transform, "Supply Pistol", PostRoot + "/Objects/Pickable/Pistol.png", new Vector3(6f, -7f, 0f), Vector3.one * 1.3f);
+        CreateDecoration(root.transform, "Overgrown Car", PostRoot + "/Objects/Vehicles/Overgrown/Car_1_Overgrown/Bleak-Yellow/Car_1_Overgrown_Bleak-Yellow_Red.png", new Vector3(-18f, 12f, 0f), Vector3.one * 1.35f);
+        CreateDecoration(root.transform, "Scrap Car", PostRoot + "/Objects/Vehicles/Rust/Car_6_Rust_Scrap/Car_6_Rust_Red_Scrap.png", new Vector3(21f, -12f, 0f), Vector3.one * 1.35f);
+        CreateDecoration(root.transform, "Abandoned Bus", PostRoot + "/Objects/Vehicles/Rust/Car_8_Rust_Bus/Car_8_Rust_Red_Bus.png", new Vector3(18f, 10f, 0f), Vector3.one * 1.72f);
+        CreateDecoration(root.transform, "Ruined Truck", PostRoot + "/Objects/Vehicles/Rust/Car_7_Rust_Truck/Car_7_Rust_Red_Truck_.png", new Vector3(-27f, -15f, 0f), Vector3.one * 1.55f);
+        CreateDecoration(root.transform, "Broken Van", PostRoot + "/Objects/Vehicles/Rust/Car_3_Rust_Van/Car_3_Rust_Blue_Van.png", new Vector3(38f, -18f, 0f), Vector3.one * 1.45f);
+        CreateDecoration(root.transform, "Ammo Crate", PostRoot + "/Objects/Pickable/Ammo-crate_Red.png", new Vector3(-8f, -16f, 0f), Vector3.one * 1.15f);
+        CreateDecoration(root.transform, "Rust Barrel A", PostRoot + "/Objects/Barrel_rust_red_1.png", new Vector3(10f, 5f, 0f), Vector3.one * 1.1f);
+        CreateDecoration(root.transform, "Rust Barrel B", PostRoot + "/Objects/Barrel_rust_blue_2.png", new Vector3(-33f, -8f, 0f), Vector3.one * 1.1f);
+        CreateDecoration(root.transform, "Boarded Door", PostRoot + "/Objects/Buildings/Door_3_Boarded-up_Beige.png", new Vector3(-48f, 26f, 0f), Vector3.one * 1.6f);
+        CreateDecoration(root.transform, "Destroyed Wall", PostRoot + "/Objects/Buildings/Destroyed-wall_not-corner.png", new Vector3(55f, -28f, 0f), Vector3.one * 1.45f);
+        CreateDecoration(root.transform, "Container", PostRoot + "/Objects/Container/Container_3_Gray_Horizontal.png", new Vector3(-58f, -34f, 0f), Vector3.one * 1.35f);
+        CreateDecoration(root.transform, "Street Light", PostRoot + "/Objects/Street-Light_4_Side_Overgrown_Bleak-Yellow.png", new Vector3(-10f, 22f, 0f), Vector3.one * 1.25f);
 
         var spawner = root.AddComponent<InfiniteDecorationSpawner>();
         spawner.player = player;
-        spawner.chunkSize = 18;
+        spawner.chunkSize = 20;
         spawner.chunkRadius = 4;
-        spawner.maxDecorationsPerChunk = 3;
+        spawner.maxDecorationsPerChunk = 5;
+        spawner.largeDecorationChance = 0.32f;
+        spawner.shadowSprite = CreateShadowSpriteAsset();
         spawner.decorationSprites = new[]
         {
             LoadSprite(PostRoot + "/Objects/Garbage-Bin_1.png"),
@@ -624,6 +796,15 @@ public static class DesktopSurvivorsSceneBuilder
             LoadSprite(PostRoot + "/Objects/Gray-brick_Debris.png"),
             LoadSprite(PostRoot + "/Objects/Traffic-cone.png")
         };
+        spawner.largeDecorationSprites = new[]
+        {
+            LoadSprite(PostRoot + "/Objects/Vehicles/Rust/Car_8_Rust_Bus/Car_8_Rust_Red_Bus.png"),
+            LoadSprite(PostRoot + "/Objects/Vehicles/Rust/Car_7_Rust_Truck/Car_7_Rust_Red_Truck_.png"),
+            LoadSprite(PostRoot + "/Objects/Vehicles/Rust/Car_3_Rust_Van/Car_3_Rust_Blue_Van.png"),
+            LoadSprite(PostRoot + "/Objects/Vehicles/Overgrown/Car_8_Overgrown_Bus/Bleak-Yellow/Car_8_Overgrown_Bleak-Yellow_Red_Bus.png"),
+            LoadSprite(PostRoot + "/Objects/Container/Container_3_Gray_Horizontal.png"),
+            LoadSprite(PostRoot + "/Objects/Buildings/Destroyed-wall_not-corner.png")
+        };
     }
 
     private static void CreateDecoration(Transform parent, string name, string spritePath, Vector3 position, Vector3 scale)
@@ -636,9 +817,31 @@ public static class DesktopSurvivorsSceneBuilder
         go.transform.SetParent(parent);
         go.transform.position = position;
         go.transform.localScale = scale;
-        var sr = go.AddComponent<SpriteRenderer>();
+
+        AddDecorationShadow(go.transform, scale.x > 1.2f);
+
+        var visual = new GameObject("Visual");
+        visual.transform.SetParent(go.transform, false);
+        var sr = visual.AddComponent<SpriteRenderer>();
         sr.sprite = sprite;
-        sr.sortingOrder = 2;
+        sr.sortingOrder = 4;
+    }
+
+    private static void AddDecorationShadow(Transform parent, bool large)
+    {
+        var shadowSprite = CreateShadowSpriteAsset();
+        if (shadowSprite == null)
+            return;
+
+        var shadow = new GameObject("Shadow");
+        shadow.transform.SetParent(parent, false);
+        shadow.transform.localPosition = new Vector3(0f, -0.16f, 0f);
+        shadow.transform.localScale = large ? new Vector3(1.85f, 0.58f, 1f) : new Vector3(1.1f, 0.36f, 1f);
+
+        var sr = shadow.AddComponent<SpriteRenderer>();
+        sr.sprite = shadowSprite;
+        sr.color = new Color(0f, 0f, 0f, large ? 0.42f : 0.27f);
+        sr.sortingOrder = 1;
     }
 
     private static GameObject CreatePlayer(Projectile projectilePrefab)
@@ -759,7 +962,6 @@ public static class DesktopSurvivorsSceneBuilder
         var spawner = go.AddComponent<SupplySpawner>();
         spawner.healPrefab = healPickupPrefab;
         spawner.bombPrefab = bombPickupPrefab;
-        spawner.experiencePrefab = experiencePickupPrefab;
         spawner.player = player;
         spawner.spawnInterval = 17f;
         spawner.spawnDistance = 8f;
@@ -798,12 +1000,38 @@ public static class DesktopSurvivorsSceneBuilder
         var hudBar = CreatePanel(canvasObject.transform, "HUD Bar", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 0f), new Vector2(0f, 82f), new Color(0.035f, 0.04f, 0.035f, 0.9f));
         CreatePanel(hudBar.transform, "Rust Accent", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(94f, -8f), new Vector2(144f, 6f), new Color(0.75f, 0.18f, 0.08f, 1f));
         manager.statusText = CreateText(hudBar.transform, "Status", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -12f), new Vector2(920f, 30f), 20, TextAnchor.UpperLeft, "START 버튼을 눌러 폐허 도시로 진입");
-        manager.levelText = CreateText(hudBar.transform, "Level", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -48f), new Vector2(480f, 26f), 20, TextAnchor.UpperLeft, "LV 1  XP 0 / 5");
+        manager.levelText = CreateText(hudBar.transform, "Level", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -48f), new Vector2(300f, 26f), 20, TextAnchor.UpperLeft, "LV 1  KILL 0");
         manager.timerText = CreateText(hudBar.transform, "Timer", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-90f, -18f), new Vector2(180f, 42f), 34, TextAnchor.UpperCenter, "00:00");
+        CreateExperienceBar(hudBar.transform, manager);
 
         manager.rewardPanel = CreateRewardPanel(canvasObject.transform);
         CreateTitlePanel(canvasObject.transform, manager);
         CreateGameOverPanel(canvasObject.transform, manager);
+    }
+
+    private static void CreateExperienceBar(Transform parent, SurvivorsGameManager manager)
+    {
+        var background = CreatePanel(parent, "Experience Bar Background", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -78f), new Vector2(0f, 10f), new Color(0.015f, 0.025f, 0.04f, 0.95f));
+        background.GetComponent<RectTransform>().pivot = new Vector2(0.5f, 0.5f);
+
+        var fillObject = new GameObject("Experience Bar Fill");
+        fillObject.transform.SetParent(background.transform, false);
+        var fill = fillObject.AddComponent<Image>();
+        fill.color = new Color(0.08f, 0.55f, 1f, 1f);
+        fill.type = Image.Type.Filled;
+        fill.fillMethod = Image.FillMethod.Horizontal;
+        fill.fillOrigin = (int)Image.OriginHorizontal.Left;
+        fill.fillAmount = 0f;
+
+        var fillRect = fillObject.GetComponent<RectTransform>();
+        fillRect.anchorMin = Vector2.zero;
+        fillRect.anchorMax = Vector2.one;
+        fillRect.offsetMin = new Vector2(2f, 2f);
+        fillRect.offsetMax = new Vector2(-2f, -2f);
+
+        manager.experienceBarFill = fill;
+        manager.experienceBarText = CreateText(background.transform, "Experience Bar Text", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(220f, 20f), 15, TextAnchor.MiddleCenter, "XP 0 / 5");
+        manager.experienceBarText.color = new Color(0.82f, 0.94f, 1f, 1f);
     }
 
     private static GameObject CreatePanel(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 anchoredPosition, Vector2 size, Color color)

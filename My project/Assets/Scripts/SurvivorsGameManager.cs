@@ -24,6 +24,8 @@ public class SurvivorsGameManager : MonoBehaviour
     public Text statusText;
     public Text levelText;
     public Text timerText;
+    public Text experienceBarText;
+    public Image experienceBarFill;
     public Text gameOverTitleText;
     public Text gameOverInfoText;
 
@@ -313,7 +315,13 @@ public class SurvivorsGameManager : MonoBehaviour
     private void RefreshHud()
     {
         if (levelText != null)
-            levelText.text = "LV " + level + "  XP " + experience + " / " + experienceToNextLevel + "  KILL " + killCount;
+            levelText.text = "LV " + level + "  KILL " + killCount;
+
+        if (experienceBarFill != null)
+            experienceBarFill.fillAmount = experienceToNextLevel > 0 ? Mathf.Clamp01((float)experience / experienceToNextLevel) : 0f;
+
+        if (experienceBarText != null)
+            experienceBarText.text = "XP " + experience + " / " + experienceToNextLevel;
 
         if (timerText != null)
             timerText.text = FormatTime(elapsed);

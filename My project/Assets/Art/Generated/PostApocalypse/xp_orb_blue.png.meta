@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: fc3e0b3a80dd859478d507a9e76ea362
+guid: 1415bb93dca42b54789696c7d9fd1599
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -32563923286421756
-    second: Car_7_Rust_Red_Truck__0
+      213: -4522454195041850392
+    second: xp_orb_blue_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -100,13 +100,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Car_7_Rust_Red_Truck__0
+      name: xp_orb_blue_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 59
-        height: 58
+        x: 2
+        y: 2
+        width: 20
+        height: 20
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -115,8 +115,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 40f0508c84f4c8ff0800000000000000
-      internalID: -32563923286421756
+      spriteID: 8eb2e8fded30d31c0800000000000000
+      internalID: -4522454195041850392
       vertices: []
       indices: 
       edges: []
@@ -135,7 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Car_7_Rust_Red_Truck__0: -32563923286421756
+      xp_orb_blue_0: -4522454195041850392
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

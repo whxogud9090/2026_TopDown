@@ -4,7 +4,6 @@ public class SupplySpawner : MonoBehaviour
 {
     public SupplyPickup healPrefab;
     public SupplyPickup bombPrefab;
-    public SupplyPickup experiencePrefab;
     public Transform player;
     public float spawnInterval = 18f;
     public float spawnDistance = 7.5f;
@@ -61,14 +60,11 @@ public class SupplySpawner : MonoBehaviour
             if (healAllowed && roll < 0.28f)
                 return healPrefab;
 
-            return experiencePrefab;
+            return healAllowed ? healPrefab : null;
         }
 
         if (healAllowed && roll < 0.24f)
             return healPrefab;
-
-        if (roll < 0.64f)
-            return experiencePrefab;
 
         return bombPrefab;
     }
