@@ -31,8 +31,6 @@ public class MenuButtonFeedback : MonoBehaviour, IPointerDownHandler, IPointerUp
     public void OnPointerDown(PointerEventData eventData)
     {
         targetScale = baseScale * pressedScale;
-        if (audioSource != null && pressClip != null)
-            audioSource.PlayOneShot(pressClip);
     }
 
     public void OnPointerUp(PointerEventData eventData)

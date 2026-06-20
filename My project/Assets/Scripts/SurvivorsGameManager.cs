@@ -5,8 +5,8 @@ using UnityEngine.UI;
 
 public class SurvivorsGameManager : MonoBehaviour
 {
+    private const string MainMenuSceneName = "MainMenu";
     private const string MasterVolumeKey = "survivors_master_volume";
-    private const string MusicVolumeKey = "survivors_music_volume";
 
     public static SurvivorsGameManager Instance { get; private set; }
 
@@ -47,12 +47,6 @@ public class SurvivorsGameManager : MonoBehaviour
     private bool selectedCharacterApplied;
     private SurvivorsSaveData saveData;
     private string selectedCharacterId = SurvivorsCharacterIds.Pistol;
-    private Text characterSelectInfoText;
-    private Button pistolCharacterButton;
-    private Button shotgunCharacterButton;
-    private Text pistolCharacterLabel;
-    private Text shotgunCharacterLabel;
-    private AudioSource gameMusicSource;
     private readonly Dictionary<RewardType, int> passiveLevels = new();
 
     private readonly List<RewardChoice> rewardPool = new()
@@ -75,6 +69,15 @@ public class SurvivorsGameManager : MonoBehaviour
 
     private void Start()
     {
+        if (!GameLaunchConfig.StartImmediately)
+        {
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(MainMenuSceneName);
+            return;
+        }
+
+        GameLaunchConfig.StartImmediately = false;
+
         saveData = SurvivorsSaveSystem.Load();
         selectedCharacterId = saveData.selectedCharacterId;
         if (string.IsNullOrEmpty(selectedCharacterId))
@@ -94,15 +97,14 @@ public class SurvivorsGameManager : MonoBehaviour
         if (restartButton != null)
             restartButton.onClick.AddListener(RestartGame);
 
-        BuildCharacterSelectUi();
-        ShowTitle();
-        RefreshHud();
+        if (titlePanel != null)
+            titlePanel.SetActive(false);
 
-        if (GameLaunchConfig.StartImmediately)
-        {
-            GameLaunchConfig.StartImmediately = false;
-            StartGame();
-        }
+        if (gameOverPanel != null)
+            gameOverPanel.SetActive(false);
+
+        RefreshHud();
+        StartGame();
     }
 
     private void Update()
@@ -120,7 +122,6 @@ public class SurvivorsGameManager : MonoBehaviour
     public void StartGame()
     {
         ApplySelectedCharacter();
-        EnsureGameMusic();
         gameStarted = true;
         gameOver = false;
         Time.timeScale = 1f;
@@ -299,24 +300,9 @@ public class SurvivorsGameManager : MonoBehaviour
         if (coffeeSpillWeapon != null)
             coffeeSpillWeapon.Evolve();
 
-        FloatingText.Spawn(player.position + Vector3.up * 1.1f, "합성 완료", new Color(1f, 0.55f, 0.12f, 1f));
+        if (player != null)
+            FloatingText.Spawn(player.position + Vector3.up * 1.1f, "합성 완료", new Color(1f, 0.55f, 0.12f, 1f));
         CameraShake.Shake(0.18f, 0.18f);
-    }
-
-    private void ShowTitle()
-    {
-        gameStarted = false;
-        Time.timeScale = 0f;
-        RefreshCharacterSelectUi();
-
-        if (titlePanel != null)
-            titlePanel.SetActive(true);
-
-        if (gameOverPanel != null)
-            gameOverPanel.SetActive(false);
-
-        if (statusText != null)
-            statusText.text = "캐릭터를 선택하고 START를 눌러 황무지로 진입";
     }
 
     private void OnPlayerDied(Health health)
@@ -335,128 +321,14 @@ public class SurvivorsGameManager : MonoBehaviour
         {
             var unlockLine = shotgunUnlockedNow
                 ? "\n신규 캐릭터 해금: 샷건 생존자"
-                : "\n샷건 생존자 해금 조건: 한 판에서 " + shotgunUnlockKillRequirement + "킬";
+                : "\n샷건 생존자 해금 조건: 한 판에 " + shotgunUnlockKillRequirement + "킬";
             gameOverInfoText.text = "생존 시간 " + FormatTime(elapsed) + " / 도달 레벨 " + level + " / 처치 " + killCount
                 + unlockLine
-                + "\nR 키 또는 재시작 버튼으로 다시 도전";
+                + "\nR 키 또는 다시하기 버튼으로 재도전";
         }
 
         if (statusText != null)
-            statusText.text = "사망 - R 키로 재시작";
-    }
-
-    private void BuildCharacterSelectUi()
-    {
-        if (titlePanel == null || characterSelectInfoText != null)
-            return;
-
-        var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        var root = new GameObject("Character Select");
-        root.transform.SetParent(titlePanel.transform, false);
-        var rootRect = root.AddComponent<RectTransform>();
-        rootRect.anchorMin = new Vector2(0.5f, 0.5f);
-        rootRect.anchorMax = new Vector2(0.5f, 0.5f);
-        rootRect.pivot = new Vector2(0.5f, 0.5f);
-        rootRect.anchoredPosition = new Vector2(0f, -80f);
-        rootRect.sizeDelta = new Vector2(720f, 150f);
-
-        characterSelectInfoText = CreateRuntimeText(root.transform, "Character Select Info", font, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -2f), new Vector2(0f, 28f), 20, TextAnchor.MiddleCenter);
-        characterSelectInfoText.color = new Color(0.95f, 0.84f, 0.58f);
-
-        pistolCharacterButton = CreateCharacterButton(root.transform, "Pistol Survivor Button", new Vector2(-185f, -72f), out pistolCharacterLabel);
-        shotgunCharacterButton = CreateCharacterButton(root.transform, "Shotgun Survivor Button", new Vector2(185f, -72f), out shotgunCharacterLabel);
-
-        pistolCharacterButton.onClick.AddListener(() => SelectCharacter(SurvivorsCharacterIds.Pistol));
-        shotgunCharacterButton.onClick.AddListener(() => SelectCharacter(SurvivorsCharacterIds.Shotgun));
-
-        if (startButton != null)
-        {
-            var startRect = startButton.GetComponent<RectTransform>();
-            if (startRect != null)
-                startRect.anchoredPosition = new Vector2(startRect.anchoredPosition.x, -270f);
-        }
-    }
-
-    private Button CreateCharacterButton(Transform parent, string name, Vector2 position, out Text label)
-    {
-        var go = new GameObject(name);
-        go.transform.SetParent(parent, false);
-        var image = go.AddComponent<Image>();
-        image.color = new Color(0.16f, 0.15f, 0.12f, 0.94f);
-        var button = go.AddComponent<Button>();
-        var colors = button.colors;
-        colors.normalColor = image.color;
-        colors.highlightedColor = new Color(0.42f, 0.31f, 0.18f, 1f);
-        colors.pressedColor = new Color(0.68f, 0.28f, 0.10f, 1f);
-        colors.disabledColor = new Color(0.08f, 0.08f, 0.075f, 0.92f);
-        button.colors = colors;
-
-        var rect = go.GetComponent<RectTransform>();
-        rect.anchorMin = new Vector2(0.5f, 0.5f);
-        rect.anchorMax = new Vector2(0.5f, 0.5f);
-        rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = position;
-        rect.sizeDelta = new Vector2(315f, 92f);
-
-        label = CreateRuntimeText(go.transform, "Label", Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"), Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, 18, TextAnchor.MiddleCenter);
-        label.color = new Color(0.95f, 0.88f, 0.68f);
-        return button;
-    }
-
-    private Text CreateRuntimeText(Transform parent, string name, Font font, Vector2 anchorMin, Vector2 anchorMax, Vector2 anchoredPosition, Vector2 size, int fontSize, TextAnchor alignment)
-    {
-        var go = new GameObject(name);
-        go.transform.SetParent(parent, false);
-        var text = go.AddComponent<Text>();
-        text.font = font;
-        text.fontSize = fontSize;
-        text.alignment = alignment;
-        text.raycastTarget = false;
-        var rect = go.GetComponent<RectTransform>();
-        rect.anchorMin = anchorMin;
-        rect.anchorMax = anchorMax;
-        rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = anchoredPosition;
-        rect.sizeDelta = size;
-        return text;
-    }
-
-    private void SelectCharacter(string characterId)
-    {
-        if (characterId == SurvivorsCharacterIds.Shotgun && !saveData.shotgunSurvivorUnlocked)
-            return;
-
-        selectedCharacterId = characterId;
-        saveData.selectedCharacterId = selectedCharacterId;
-        SurvivorsSaveSystem.Save(saveData);
-        RefreshCharacterSelectUi();
-    }
-
-    private void RefreshCharacterSelectUi()
-    {
-        if (saveData == null)
-            saveData = SurvivorsSaveSystem.Load();
-
-        if (characterSelectInfoText != null)
-            characterSelectInfoText.text = "캐릭터 선택";
-
-        if (pistolCharacterLabel != null)
-            pistolCharacterLabel.text = GetSelectedPrefix(SurvivorsCharacterIds.Pistol) + "기본 생존자\n권총 자동 사격";
-
-        if (shotgunCharacterLabel != null)
-        {
-            shotgunCharacterLabel.text = saveData.shotgunSurvivorUnlocked
-                ? GetSelectedPrefix(SurvivorsCharacterIds.Shotgun) + "샷건 생존자\n넓은 범위 산탄 사격"
-                : "잠김: 샷건 생존자\n한 판에서 " + shotgunUnlockKillRequirement + "킬 달성 후 사망";
-        }
-
-        if (shotgunCharacterButton != null)
-            shotgunCharacterButton.interactable = saveData.shotgunSurvivorUnlocked;
-    }
-
-    private string GetSelectedPrefix(string characterId)
-    {
-        return selectedCharacterId == characterId ? "> " : "";
+            statusText.text = "사망 - R 키로 다시하기";
     }
 
     private void ApplySelectedCharacter()
@@ -504,50 +376,10 @@ public class SurvivorsGameManager : MonoBehaviour
         return unlockedNow;
     }
 
-    private void EnsureGameMusic()
-    {
-        if (gameMusicSource == null)
-        {
-            var audioObject = new GameObject("Game Wasteland Music");
-            audioObject.transform.SetParent(transform, false);
-            gameMusicSource = audioObject.AddComponent<AudioSource>();
-            gameMusicSource.clip = CreateGameMusicClip();
-            gameMusicSource.loop = true;
-            gameMusicSource.playOnAwake = false;
-        }
-
-        AudioListener.volume = PlayerPrefs.GetFloat(MasterVolumeKey, 0.85f);
-        gameMusicSource.volume = PlayerPrefs.GetFloat(MusicVolumeKey, 0.85f) * 0.55f;
-        if (!gameMusicSource.isPlaying)
-            gameMusicSource.Play();
-    }
-
-    private AudioClip CreateGameMusicClip()
-    {
-        const int sampleRate = 44100;
-        var samples = sampleRate * 8;
-        var data = new float[samples];
-        var bassNotes = new[] { 55f, 55f, 65.41f, 49f };
-
-        for (var i = 0; i < samples; i++)
-        {
-            var t = (float)i / sampleRate;
-            var step = Mathf.FloorToInt(t * 2f) % bassNotes.Length;
-            var bass = Mathf.Sin(t * Mathf.PI * 2f * bassNotes[step]) * 0.07f;
-            var pulse = Mathf.Pow(Mathf.Max(0f, Mathf.Sin(t * Mathf.PI * 2f * 2f)), 10f) * 0.12f;
-            var siren = Mathf.Sin(t * Mathf.PI * 2f * Mathf.Lerp(160f, 210f, (Mathf.Sin(t * 0.7f) + 1f) * 0.5f)) * 0.025f;
-            var grit = Mathf.Sin(t * Mathf.PI * 2f * 31f) * 0.025f;
-            data[i] = bass + pulse + siren + grit;
-        }
-
-        var clip = AudioClip.Create("Game Wasteland Combat Theme", samples, 1, sampleRate, false);
-        clip.SetData(data, 0);
-        return clip;
-    }
-
     private void RestartGame()
     {
         Time.timeScale = 1f;
+        GameLaunchConfig.StartImmediately = true;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 

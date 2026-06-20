@@ -36,7 +36,7 @@ public class MainMenuBootstrap : MonoBehaviour
     private void OnEnable()
     {
         BuildMenu();
-        EnsureMenuMusicPlaying();
+        AudioListener.volume = 0f;
     }
 
     private void BuildMenu()
@@ -57,11 +57,11 @@ public class MainMenuBootstrap : MonoBehaviour
             selectedCharacterId = SurvivorsCharacterIds.Pistol;
 
         CreateCamera();
-        CreateAudio();
+        AudioListener.volume = 0f;
         CreateCanvas();
         CreateEventSystem();
         ApplyVolumes();
-        EnsureMenuMusicPlaying();
+        AudioListener.volume = 0f;
     }
 
     private void ClearGeneratedObjects()
@@ -108,8 +108,7 @@ public class MainMenuBootstrap : MonoBehaviour
         musicSource.loop = true;
         musicSource.playOnAwake = false;
 
-        if (Application.isPlaying)
-            musicSource.Play();
+        musicSource.Stop();
     }
 
     private void CreateCanvas()
@@ -364,7 +363,7 @@ public class MainMenuBootstrap : MonoBehaviour
 
     private void SetMasterVolume(float value)
     {
-        AudioListener.volume = value;
+        AudioListener.volume = 0f;
         PlayerPrefs.SetFloat(MasterVolumeKey, value);
         UpdateMusicVolume();
     }
@@ -379,7 +378,7 @@ public class MainMenuBootstrap : MonoBehaviour
     {
         PlayerPrefs.SetFloat(SfxVolumeKey, value);
         if (sfxSource != null)
-            sfxSource.volume = value;
+            sfxSource.volume = 0f;
     }
 
     private void ApplyVolumes()
@@ -394,15 +393,15 @@ public class MainMenuBootstrap : MonoBehaviour
         if (musicSource == null)
             return;
 
-        musicSource.volume = PlayerPrefs.GetFloat(MusicVolumeKey, 0.85f) * 0.90f;
+        musicSource.volume = 0f;
     }
 
     private void EnsureMenuMusicPlaying()
     {
-        if (!Application.isPlaying || musicSource == null || musicSource.isPlaying)
+        if (musicSource == null)
             return;
 
-        musicSource.Play();
+        musicSource.Stop();
     }
 
     private void QuitGame()
@@ -495,8 +494,8 @@ public class MainMenuBootstrap : MonoBehaviour
     private void AddFeedback(GameObject go)
     {
         var feedback = go.AddComponent<MenuButtonFeedback>();
-        feedback.audioSource = sfxSource;
-        feedback.pressClip = clickClip;
+        feedback.audioSource = null;
+        feedback.pressClip = null;
     }
 
     private void CreateEventSystem()
